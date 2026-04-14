@@ -5,16 +5,35 @@ use crate::analysis::techreport::{load_techdata, compute_ic_table, write_ic_repo
 use crate::analysis::techind::compute_all;
 use crate::analysis::report::load_csv;
 
-pub fn run(data_dir: &str, reports_dir: &str) -> Result<()> {
-    let entries = fs::read_dir(data_dir)?;
-    let mut per_pair: Vec<(String, Vec<crate::analysis::techreport::IcRow>)> = Vec::new();
-
+fn collect_feature_csvs(dir: &str) -> Vec<std::path::PathBuf> {
+    let mut results = Vec::new();
+    let Ok(entries) = fs::read_dir(dir) else { return results; };
     for entry in entries.filter_map(|e| e.ok()) {
         let path = entry.path();
-        let fname = path.file_name().and_then(|f| f.to_str()).unwrap_or("").to_string();
-        if !fname.ends_with("_features.csv") { continue; }
+        if path.is_dir() {
+            results.extend(collect_feature_csvs(path.to_str().unwrap_or("")));
+        } else if path.file_name().and_then(|f| f.to_str()).unwrap_or("").ends_with("_features.csv") {
+            results.push(path);
+        }
+    }
+    results
+}
 
-        let symbol = fname.trim_end_matches("_features.csv").to_string();
+pub fn run(data_dir: &str, reports_dir: &str) -> Result<()> {
+    let csv_paths = collect_feature_csvs(data_dir);
+    let mut per_pair: Vec<(String, Vec<crate::analysis::techreport::IcRow>)> = Vec::new();
+
+    for path in csv_paths {
+        let fname = path.file_name().and_then(|f| f.to_str()).unwrap_or("").to_string();
+        // symbol = "subdir/NAME", e.g. "dukascopy/EURUSD"
+        let symbol = {
+            let parent = path.parent()
+                .and_then(|p| p.file_name())
+                .and_then(|f| f.to_str())
+                .unwrap_or("unknown");
+            let base = fname.trim_end_matches("_features.csv");
+            format!("{parent}/{base}")
+        };
         let path_str = path.to_str().unwrap_or("").to_string();
 
         let mut td = match load_techdata(&path_str) {

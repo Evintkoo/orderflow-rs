@@ -43,8 +43,11 @@ pub fn compute_ic_table(td: &TechData) -> Vec<IcRow> {
 
 /// Write IC table for one symbol to `<reports_dir>/<symbol>_techanalysis.csv`.
 pub fn write_ic_report(symbol: &str, rows: &[IcRow], reports_dir: &str) -> Result<()> {
-    std::fs::create_dir_all(reports_dir)?;
     let path = format!("{}/{}_techanalysis.csv", reports_dir, symbol);
+    // create all parent dirs (handles "subdir/SYMBOL" patterns)
+    if let Some(parent) = std::path::Path::new(&path).parent() {
+        std::fs::create_dir_all(parent)?;
+    }
     let mut f = std::fs::File::create(&path)
         .with_context(|| format!("create {path}"))?;
     writeln!(f, "indicator,ic_1s,ic_5s,ic_30s,ic_300s")?;
