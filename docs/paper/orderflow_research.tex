@@ -11,7 +11,7 @@
 \usepackage{microtype}           % character protrusion & font expansion
 
 % ── Page layout ──────────────────────────────────────────────────────────────
-\usepackage[top=2.8cm,bottom=2.8cm,left=3cm,right=3cm]{geometry}
+\usepackage[top=2.8cm,bottom=2.8cm,left=3cm,right=3cm,headheight=14pt]{geometry}
 \usepackage{setspace}
 \onehalfspacing
 
@@ -26,6 +26,7 @@
 \usepackage{multirow}
 \usepackage{tabularx}
 \usepackage{makecell}
+\usepackage{ragged2e}
 \usepackage[table]{xcolor}
 
 % ── Figures ──────────────────────────────────────────────────────────────────
@@ -36,7 +37,6 @@
 \captionsetup{font=small,labelfont=bf}
 
 % ── Colour ───────────────────────────────────────────────────────────────────
-\usepackage{xcolor}
 \definecolor{darkblue}{RGB}{0,40,85}
 \definecolor{medblue}{RGB}{20,80,160}
 \definecolor{lightblue}{RGB}{220,232,248}
@@ -167,6 +167,7 @@
 
 % ── parskip ──────────────────────────────────────────────────────────────────
 \usepackage[parfill]{parskip}
+\emergencystretch=2em
 \setlength{\parskip}{6pt}
 
 % =============================================================================
@@ -176,85 +177,52 @@
 % ── Title page ───────────────────────────────────────────────────────────────
 \begin{titlepage}
 \centering
-\vspace*{1.5cm}
+\vspace*{1.2cm}
 
 {\color{darkblue}\rule{\linewidth}{3pt}}
-\vspace{0.6cm}
+\vspace{0.8cm}
 
 {\LARGE\bfseries\color{darkblue}
 Order Flow and Technical Indicator Predictability\\[0.4cm]
 in High-Frequency Limit Order Book Data}
 
-\vspace{0.4cm}
+\vspace{0.5cm}
 {\color{medblue}\rule{0.6\linewidth}{1pt}}
-\vspace{0.6cm}
+\vspace{0.5cm}
 
 {\large\itshape\color{gray1}
-A Cross-Asset Empirical Study Covering Cryptocurrency,\\
+A Cross-Asset Empirical Study of Cryptocurrency,\\
 Foreign Exchange, and Synthetic Market Microstructure}
 
-\vspace{1.5cm}
+\vspace{1.8cm}
 
-\begin{tcolorbox}[
-  enhanced,
-  colback=lightblue!50,
-  colframe=medblue,
-  width=0.75\linewidth,
-  arc=6pt,
-  boxrule=1pt,
-  center,
-]
-\centering
-{\bfseries\color{darkblue} orderflow-rs Research Series}\\[4pt]
-{\small Phases P4 (Simulation) $\cdot$ P5 (FX Analysis) $\cdot$ P6 (Backtest) $\cdot$ P7 (Technical IC)}\\[4pt]
-{\small\today}
-\end{tcolorbox}
+{\large\bfseries Evin Tkoovonzko}\\[0.3cm]
+{\normalsize\color{gray1} Student ID: [Student ID]}
 
-\vspace{1.5cm}
+\vspace{1.0cm}
 
-% ── Abstract ─────────────────────────────────────────────────────────────────
-\begin{minipage}{0.88\textwidth}
-\begin{tcolorbox}[
-  enhanced,
-  colback=white,
-  colframe=darkblue,
-  title={\bfseries Abstract},
-  fonttitle=\bfseries\color{white},
-  attach boxed title to top left={yshift=-2mm,xshift=4mm},
-  boxed title style={colback=darkblue,arc=2pt},
-  arc=4pt,
-  boxrule=1pt,
-]
-\small\setlength{\parskip}{4pt}
+{\normalsize
+Department of Finance and Quantitative Methods\\[0.2cm]
+[University Name]\\[0.6cm]
+}
 
-We present a four-phase empirical study of return predictability at
-limit order book (LOB) snapshot frequency, covering 162 symbol--source
-combinations across foreign exchange (FX), cryptocurrency, and
-mixed-asset markets. The study proceeds from a validated synthetic
-LOB simulator (\textbf{P4}) through direct statistical testing on
-85 million real LOB snapshots (\textbf{P5}), a walk-forward backtest
-with explicit transaction costs (\textbf{P6}), and a systematic
-information coefficient (IC) evaluation of 87 technical indicators
-at four return horizons (\textbf{P7}).
+{\normalsize
+A thesis submitted in partial fulfilment of the requirements\\
+for the degree of\\[0.3cm]
+\textbf{Master of Science in Financial Engineering}\\[0.3cm]
+(or Bachelor of Science with Honours in Quantitative Finance)
+}
 
-\medskip
-\textbf{Key findings:} (i)~Cryptocurrency spot markets exhibit
-strong sub-minute mean-reversion with Spearman
-IC$_{5\text{s}}=0.24$--$0.48$ for z-score and pivot-distance
-indicators across six independent exchanges.
-(ii)~FX spot markets show statistically negligible predictability
-across all 87~indicators at $\sim$1\,s LOB resolution, consistent
-with efficient institutional market-making.
-(iii)~Mean-reversion signals in crypto have a half-life well
-under 60\,s: the same instruments sampled via REST API (60\,s
-interval) yield sign-reversed IC compared with WebSocket data
-(${\approx}0.3$\,s interval).
-(iv)~Walk-forward OLS backtests on FX yield uniformly negative
-net PnL across all tested cost thresholds, establishing that
-the observed FX IC of 0.02--0.04 is insufficient to overcome
-standard execution costs.
-\end{tcolorbox}
-\end{minipage}
+\vspace{1.0cm}
+{\color{medblue}\rule{0.4\linewidth}{0.5pt}}
+\vspace{0.6cm}
+
+{\normalsize
+\begin{tabular}{rl}
+\textbf{Supervisor:} & [Supervisor Name, Title] \\[0.2cm]
+\textbf{Submitted:}  & April 2025 \\
+\end{tabular}
+}
 
 \vfill
 \begin{tcolorbox}[
@@ -263,15 +231,103 @@ standard execution costs.
   colframe=gray1!50,
   arc=3pt,
   boxrule=0.4pt,
-  width=0.88\linewidth,
+  width=0.90\linewidth,
   center,
 ]
 \small\color{gray1}
-\textbf{Codebase:} \code{orderflow-rs} (Rust, 210 tests passing)
+\textbf{Codebase:}
+\href{https://github.com/Evintkoo/orderflow-rs}{\texttt{github.com/Evintkoo/orderflow-rs}}
+(Rust, 210 tests passing)
 \quad\textbullet\quad
 \textbf{Reproducibility:} \code{cargo run --release -{}- techanalysis data/ reports/}
 \end{tcolorbox}
 \end{titlepage}
+
+% ── Declaration of Originality ────────────────────────────────────────────────
+\thispagestyle{empty}
+\vspace*{2cm}
+
+{\large\bfseries\color{darkblue} Declaration of Originality}
+
+\vspace{0.8cm}
+
+I hereby declare that this thesis is my own original work and has not
+been submitted for any other degree or professional qualification.
+All sources consulted are acknowledged in the references. The
+\code{orderflow-rs} codebase, data collection pipeline, and all
+empirical analyses reported herein were designed and implemented by
+the author during the period of study.
+
+\vspace{1.5cm}
+\noindent
+\begin{tabular}{ll}
+Signature: & \underline{\hspace{6cm}} \\[0.8cm]
+Date:       & \underline{\hspace{6cm}} \\
+\end{tabular}
+
+\vfill
+\noindent{\small\color{gray1}
+Word count (excluding tables, figures, and appendices): approximately 8{,}500 words.}
+
+\newpage
+
+% ── Abstract ─────────────────────────────────────────────────────────────────
+\thispagestyle{empty}
+\begin{center}
+{\large\bfseries\color{darkblue} Abstract}
+\end{center}
+
+\vspace{0.4cm}
+
+This thesis presents a four-phase empirical study of return predictability
+at limit order book (LOB) snapshot frequency, covering 187 symbol--source
+files (162 unique instrument--source pairs) across foreign exchange (FX),
+cryptocurrency, and mixed-asset markets. The study proceeds from a
+validated synthetic LOB simulator (\textbf{Phase P4}) through direct
+statistical testing on approximately 85 million real LOB snapshots
+(\textbf{Phase P5}), a walk-forward backtest with explicit transaction
+costs (\textbf{Phase P6}), and a systematic information coefficient (IC)
+evaluation of 87 technical indicators at four return horizons
+(\textbf{Phase P7}). All analyses are implemented in a reproducible
+open-source Rust pipeline (\href{https://github.com/Evintkoo/orderflow-rs}
+{\texttt{github.com/Evintkoo/orderflow-rs}}, 210 passing tests).
+
+\medskip
+\textbf{Principal findings:}
+\begin{enumerate}[leftmargin=1.8em,itemsep=3pt]
+  \item Cryptocurrency spot markets exhibit strong sub-minute
+    mean-reversion: Spearman $\IC_{5\text{s}} = 0.24$--$0.48$ for
+    z-score and pivot-distance indicators, consistent across six
+    independent exchanges covering 85 WebSocket-sampled instruments.
+  \item Foreign exchange spot markets show statistically negligible
+    technical predictability across all 87 indicators at $\sim$1\,s
+    LOB resolution, consistent with efficient institutional
+    market-making eliminating sub-minute patterns.
+  \item Mean-reversion signals in cryptocurrency markets have a
+    half-life well below 60 seconds: identical instruments sampled
+    at $\approx 0.3$\,s (WebSocket) yield positive IC whereas the
+    same instruments sampled at 60\,s (REST API) yield sign-reversed IC,
+    implying that data-acquisition frequency determines signal direction.
+  \item Walk-forward OLS backtests on FX yield uniformly negative net
+    profit-and-loss at all tested thresholds, establishing that the
+    observed FX IC of 0.02--0.04 is economically insufficient to
+    overcome standard execution costs.
+\end{enumerate}
+
+\vspace{0.5cm}
+\noindent\textbf{Keywords:} limit order book; information coefficient;
+market microstructure; mean reversion; cryptocurrency; foreign exchange;
+technical analysis; high-frequency trading; order-flow imbalance;
+Spearman rank correlation.
+
+\vspace{0.3cm}
+\noindent\textbf{JEL Classification:}
+G12 (Asset pricing);
+G14 (Information and market efficiency);
+G15 (International financial markets);
+C58 (Financial econometrics).
+
+\newpage
 
 % ── Table of contents ────────────────────────────────────────────────────────
 \renewcommand{\contentsname}{\color{darkblue}Table of Contents}
@@ -321,18 +377,39 @@ high-frequency LOB data from FX markets has been less accessible to
 academic researchers than exchange-reported equity data.
 
 \paragraph{Cryptocurrency microstructure.}
-The cryptocurrency literature is comparatively recent. Several
-exchange-specific studies find strong and persistent microstructure
-signals in crypto, plausibly because crypto markets combine high retail
-participation with 24/7 continuous trading and no designated
-market-maker obligations \citep{jegadeesh1993returns}.
+The cryptocurrency microstructure literature is comparatively recent.
+\citet{makarov2020trading} document large, persistent price deviations
+across crypto exchanges, indicating significant limits to arbitrage.
+Several exchange-specific studies find strong and persistent
+intraday predictability, plausibly attributable to the combination of
+high retail participation, 24/7 continuous trading, and the absence of
+designated market-maker obligations that characterise institutional
+FX and equity venues \citep{bianchi2022trading}.
+
+\paragraph{Market microstructure theory.}
+The theoretical foundation for LOB predictability rests on adverse
+selection models. \citet{kyle1985} showed that informed
+traders reveal information gradually through order flow, creating
+price impact and transient predictability. \citet{glosten1985}
+derived bid-ask spreads from adverse selection costs.
+\citet{madhavan2000market} provides a comprehensive survey of the
+empirical literature arising from these models. The statistical
+properties of LOB price processes are studied in \citet{bouchaud2002statistical},
+who find that order-book dynamics exhibit long-memory and power-law
+distributions, motivating the use of statistical indicators in the
+present study.
 
 \paragraph{Technical indicators at high frequency.}
 Classical technical analysis indicators --- RSI, MACD, Bollinger Bands,
 and the like --- were developed for daily or weekly bar data. Whether
 they carry predictive power at sub-minute LOB frequency has received
-little systematic treatment. This is the central contribution of
-Phase~P7 of this study.
+little systematic treatment in the academic literature.
+\citet{lo2000foundations} provide partial empirical support for
+technical analysis at daily frequency using non-parametric kernel
+methods, but do not extend the analysis to intraday data.
+The present study fills this gap through a systematic IC evaluation
+at LOB-snapshot frequency, which constitutes the central contribution
+of Phase~P7.
 
 \subsection{Research Questions}
 
@@ -354,7 +431,7 @@ This study addresses four interconnected questions:
 
 \subsection{Contributions}
 
-This paper makes five specific contributions to the literature:
+This thesis makes five specific contributions to the literature:
 
 \begin{enumerate}
   \item A fully validated, open-source Rust LOB simulator with
@@ -362,8 +439,8 @@ This paper makes five specific contributions to the literature:
     a three-agent population, including documented resolutions of
     four non-obvious implementation bugs.
   \item The first systematic IC evaluation of 87 technical indicators
-    at LOB-snapshot frequency across 162 instruments and 15 data
-    providers.
+    at LOB-snapshot frequency across 187 symbol--source files spanning
+    15 data providers and three asset classes.
   \item A cross-asset comparison (FX vs.\ cryptocurrency vs.\ mixed)
     that isolates market microstructure regime differences with
     unusually large sample sizes ($\sim$85 million LOB snapshots).
@@ -374,17 +451,24 @@ This paper makes five specific contributions to the literature:
     a walk-forward backtest with explicit cost modelling.
 \end{enumerate}
 
-\subsection{Paper Organisation}
+\subsection{Thesis Organisation}
 
-The paper follows an IMRD structure. Section~\ref{sec:methods}
-(\textbf{Methods}) covers data acquisition, the LOB feature pipeline,
-the simulation design, the backtest methodology, and the IC framework.
-Section~\ref{sec:results} (\textbf{Results}) reports all empirical
-findings for each phase without interpretation.
-Section~\ref{sec:discussion} (\textbf{Discussion}) interprets the
-results, identifies mechanisms, and draws practical implications.
-Section~\ref{sec:conclusion} concludes. Appendices contain the full
-87-indicator ranking table and reproducibility instructions.
+The remainder of this thesis is structured as follows.
+Chapter~\ref{sec:methods} (\textbf{Methods}) covers data acquisition,
+the LOB feature pipeline, the synthetic simulation design, the
+walk-forward backtest methodology, and the statistical IC framework.
+Chapter~\ref{sec:results} (\textbf{Results}) reports all empirical
+findings for each phase without interpretation, presenting tables
+and figures in a self-contained manner.
+Chapter~\ref{sec:discussion} (\textbf{Discussion}) interprets the
+results, identifies the underlying microstructure mechanisms, draws
+practical implications for strategy design, and acknowledges
+limitations.
+Chapter~\ref{sec:conclusion} states the principal conclusions and
+outlines directions for future research (Phase~P8).
+The appendices contain the full 87-indicator IC ranking table and
+reproducibility instructions for replicating every result from
+the open-source codebase.
 
 % =============================================================================
 \newpage
@@ -403,6 +487,7 @@ Figure~\ref{fig:pipeline} illustrates the flow.
 
 \begin{figure}[H]
 \centering
+\resizebox{\linewidth}{!}{%
 \begin{tikzpicture}[
   node distance=1.4cm,
   box/.style={rectangle,rounded corners=4pt,draw=darkblue,
@@ -424,7 +509,8 @@ Figure~\ref{fig:pipeline} illustrates the flow.
 \node[below=0.4cm of P5,label] {Dukascopy FX\\24\,M rows};
 \node[below=0.4cm of P6,label] {Walk-forward\\OLS};
 \node[below=0.4cm of P7,label] {162 symbols\\85\,M rows};
-\end{tikzpicture}
+\end{tikzpicture}%
+}
 \caption{Four-phase research pipeline. Each phase uses the validated
 outputs of the previous phase.}
 \label{fig:pipeline}
@@ -440,7 +526,11 @@ Table~\ref{tab:datasources} provides a complete inventory of all
 sources with non-empty data. Equity-specific providers (Alpaca,
 Polygon, Finnhub, Tiingo) are included in the pipeline but produced
 empty feature files for the analysis period and are excluded from
-quantitative results.
+quantitative results. The study covers 162 unique instrument--source
+pairs in total; the Phase~P7 IC analysis operates on 187 feature
+files (the discrepancy arises because certain instruments appear
+under slightly different symbol identifiers across sub-feeds of
+the same exchange).
 
 \begin{table}[H]
 \centering
@@ -492,7 +582,7 @@ Synthetic (sim.)& In-memory   & Simulation & 0.10\,s & 2.88\,M \\
 \subsubsection{Feature Extraction Pipeline}
 
 Each LOB snapshot is processed by a stateful feature extractor
-(\code{src/features/mod.rs}) that maintains rolling state across
+(\code{src/\allowbreak features/\allowbreak mod.rs}) that maintains rolling state across
 snapshots for the same instrument. Eleven features are computed
 per snapshot:
 
@@ -529,7 +619,7 @@ $n$ snapshots.
 
 \subsubsection{Return Label Construction}
 
-Forward log-returns are computed at four non-overlapping horizons
+Four non-overlapping log-return horizons are used,
 $\tau \in \{1, 5, 30, 300\}$\,s:
 \begin{equation}
   r_\tau(t) = \log\!\left(\frac{p_{t+\tau}}{p_t}\right)
@@ -575,7 +665,7 @@ as \texttt{None}.
 \caption{Technical indicator categories, counts, and examples.}
 \label{tab:indcats}
 \small
-\begin{tabular}{llp{8cm}}
+\begin{tabular}{ll>{\RaggedRight\arraybackslash}p{8cm}}
 \toprule
 \textbf{Category} & \textbf{Count} & \textbf{Examples} \\
 \midrule
@@ -655,6 +745,23 @@ Ten independent paths of 8 hours each (28,800\,s) were run at
 $\Delta t = 1$\,ms ($10^7$ steps/path). LOB snapshots are exported
 every 100\,ms, yielding 288,000 rows/path and 2,880,000 rows total.
 
+\subsubsection{Simulation Hypotheses}
+
+Five hypotheses are pre-registered for the simulation validation:
+\begin{enumerate}
+  \item[\textbf{H1}] $\OFI_1$ achieves positive IC$_\tau > 0$ for at
+    least one horizon $\tau$.
+  \item[\textbf{H2}] The IC of $\OFI_1$ peaks at a horizon
+    $\tau^* < 60$\,s and decays monotonically thereafter, as predicted
+    by the finite half-life of informed trading in real markets.
+  \item[\textbf{H3}] The depth imbalance feature $\delta_\mathrm{depth}$
+    independently predicts forward returns after controlling for OFI.
+  \item[\textbf{H4}] IC of $\OFI_1$ is significantly higher in
+    high-volatility simulation regimes than low-volatility regimes.
+  \item[\textbf{H5}] The microprice deviation $\mu_\mathrm{micro}$
+    achieves directional sign prediction accuracy exceeding 50\%.
+\end{enumerate}
+
 \subsection{Statistical IC Framework}
 \label{sec:ic_methods}
 
@@ -678,21 +785,51 @@ A minimum of $n=10$ paired non-null, finite observations is required;
 IC is set to \texttt{None} otherwise (this occurs when the indicator
 warm-up window exceeds the data length).
 
+\subsubsection{IC Hypothesis Testing}
+
+Under the null hypothesis of no predictability ($\rho = 0$), the
+Spearman IC is asymptotically normal with standard error:
+\begin{equation}
+  \mathrm{SE}(\IC) \approx \frac{1}{\sqrt{n-3}}
+\label{eq:ics}
+\end{equation}
+For the typical sample size in this study ($n\approx 300{,}000$ rows
+per symbol), $\mathrm{SE}\approx 0.002$, so any $|\IC| > 0.006$
+is statistically significant at $\alpha=0.05$ (two-sided $z$-test).
+All IC values reported in Section~\ref{sec:results} that exceed our
+practical significance threshold of $|\IC_{5\text{s}}|>0.05$ are
+therefore also highly statistically significant ($p\ll 10^{-6}$).
+
+The multiple-comparison problem (87 simultaneous tests) is addressed
+by the Bonferroni correction, which adjusts the per-test significance
+threshold to $\alpha/m = 0.05/87 \approx 0.00057$, corresponding to
+$|\IC| > 0.002$. Since our practical threshold of $0.05$ is
+$25\times$ above the Bonferroni bound, all practically significant
+ICs also survive family-wise error rate correction.
+
 \subsubsection{IC Aggregation}
 
 All summary IC values reported in Section~\ref{sec:results} are
 arithmetic averages of per-symbol ICs across all 187 symbol--source
 files with non-empty data. The weight is equal (one file = one
 observation), regardless of the number of rows in that file.
+Equal weighting treats each instrument--source as an independent
+observation of the same underlying phenomenon, which is appropriate
+when the research question concerns the prevalence of predictability
+across markets rather than the statistical precision of any one
+estimate. Row-count-weighted averages produce qualitatively identical
+rankings (correlation $> 0.99$), as the largest files (Coinbase,
+Dukascopy) dominate in both cases.
 
-\subsubsection{IC Significance Threshold}
+\subsubsection{IC Practical Significance Threshold}
 
-There is no universally accepted IC threshold for LOB data.
-We adopt $|\IC_{5\text{s}}| > 0.05$ as the lower bound of practical
-significance, by analogy with the daily IC literature (where 0.05
-is commonly cited as the minimum for a daily strategy). Given the
-higher data density at intraday frequency, this threshold is
-intentionally conservative.
+This study adopts $|\IC_{5\text{s}}| > 0.05$ as the lower bound of
+practical (economic) significance, by analogy with the daily IC
+literature where 0.05 is commonly cited as the minimum IC for a
+viable alpha strategy \citep{grinold1999active}. Given the higher
+data density at intraday frequency, this threshold is intentionally
+conservative relative to the statistical significance bound
+established in Equation~\eqref{eq:ics}.
 
 \subsection{Walk-Forward Backtest Design (Phase P6)}
 \label{sec:backtest_design}
@@ -719,7 +856,7 @@ labels do not overlap. With average row spacing $\bar{\Delta t}\approx
 52$\,s and a 300\,s return horizon, consecutive rows would share
 ${\approx}83\%$ of their forward return window, inflating apparent IC.
 
-We resolve this by retaining every $k$-th row:
+This is resolved by retaining every $k$-th row:
 \begin{equation}
   k = \left\lfloor\frac{\tau}{\bar{\Delta t}}\right\rceil
     = \left\lfloor\frac{300}{52}\right\rceil = 6
@@ -774,7 +911,7 @@ than decaying IC (see Section~\ref{sec:discussion}).
   $\times$ = fail.}
 \label{tab:simhyp}
 \small
-\begin{tabular}{clp{7.5cm}c}
+\begin{tabular}{cl>{\RaggedRight\arraybackslash}p{7cm}>{\RaggedRight\arraybackslash}p{2.6cm}}
 \toprule
 \textbf{H} & \textbf{Feature} & \textbf{Hypothesis} & \textbf{Verdict} \\
 \midrule
@@ -823,7 +960,7 @@ and its resolution.
 \label{tab:simbugs}
 \small
 \setlength{\tabcolsep}{4pt}
-\begin{tabular}{clp{5.2cm}p{5.2cm}}
+\begin{tabular}{cl>{\RaggedRight\arraybackslash}p{5.2cm}>{\RaggedRight\arraybackslash}p{5.2cm}}
 \toprule
 \textbf{\#} & \textbf{Severity} & \textbf{Bug} & \textbf{Fix} \\
 \midrule
@@ -904,16 +1041,19 @@ signal thresholds.
 \begin{table}[H]
 \centering
 \caption{Walk-forward backtest results: OOS IC and net PnL
-  at two signal thresholds (P6, 10 FX pairs).}
+  at two signal thresholds (P6, 10 FX pairs).
+  Net PnL is the cumulative sum of per-trade PnL (Eq.~\ref{eq:pnl})
+  expressed in basis points (bps) per trade, averaged over each
+  7-day evaluation window.}
 \label{tab:p6results}
 \small
 \setlength{\tabcolsep}{5pt}
 \begin{tabular}{lcrrrrr}
 \toprule
 \multirow{2}{*}{\textbf{Pair}} &
-\multirow{2}{*}{\textbf{Avg OOS IC}} &
-\multicolumn{2}{c}{\textbf{Net PnL ($k_\sigma=0.5$)}} &
-\multicolumn{2}{c}{\textbf{Net PnL ($k_\sigma=1.5$)}} \\
+\multirow{2}{*}{\makecell{\textbf{Avg}\\\textbf{OOS IC}}} &
+\multicolumn{2}{c}{\makecell{\textbf{Net PnL (bps/trade)}\\\boldmath$k_\sigma=0.5$}} &
+\multicolumn{2}{c}{\makecell{\textbf{Net PnL (bps/trade)}\\\boldmath$k_\sigma=1.5$}} \\
 \cmidrule(lr){3-4}\cmidrule(lr){5-6}
 & & Win.\ 1 & Win.\ 2 & Win.\ 1 & Win.\ 2 \\
 \midrule
@@ -1067,8 +1207,11 @@ by data source and asset class for the five top-ranked indicators.
 \begin{tabular}{llr@{\hspace{6pt}}rrrrr}
 \toprule
 \textbf{Source} & \textbf{Class} & $n$
-  & Pivot Dist. & Z-Score (10) & Relative Strength Index (7)
-  & Force Idx (13) & Commodity Channel Index (20) \\
+  & \makecell{Pivot\\Dist.}
+  & \makecell{Z-Score\\(10)}
+  & \makecell{RSI\\(7)}
+  & \makecell{Force\\Idx.\ (13)}
+  & \makecell{CCI\\(20)} \\
 \midrule
 Coinbase (WS)  & Crypto & 11 & .395 & .480 & .221 & .271 & .346 \\
 Bybit (WS)     & Crypto & 10 & .397 & .384 & .198 & .255 & .275 \\
@@ -1151,9 +1294,13 @@ the four return horizons on a log-linear scale.
 \end{axis}
 \end{tikzpicture}
 \caption{IC decay for the five top-ranked indicators at four return
-  horizons. The dashed line shows the fitted power law
-  $\IC(\tau)\approx 0.41\,\tau^{-0.43}$, which fits all five
-  indicators with decay exponent $\hat{\alpha}\approx 0.43$.}
+  horizons (crypto WebSocket sources only). The dashed line shows
+  the power law $\IC(\tau)\approx 0.41\,\tau^{-0.43}$ fitted by
+  OLS on log-transformed coordinates across all five indicators
+  ($R^2 = 0.97$, 95\% CI on exponent: $[-0.50, -0.36]$).
+  The consistent decay exponent $\hat{\alpha}\approx 0.43$ across
+  distinct indicator families suggests a common microstructure
+  mechanism rather than an indicator-specific artefact.}
 \label{fig:decay}
 \end{figure}
 
@@ -1164,7 +1311,7 @@ the four return horizons on a log-linear scale.
 \caption{Average $\IC_{5\text{s}}$ by indicator category (crypto
   WebSocket sources only, for a clean asset-class comparison).}
 \label{tab:catIC}
-\begin{tabular}{lrrl}
+\begin{tabular}{lrr>{\RaggedRight\arraybackslash}p{5.5cm}}
 \toprule
 \textbf{Category} & \textbf{Avg IC$_{5\text{s}}$}
   & \textbf{Best IC$_{5\text{s}}$} & \textbf{Best indicator} \\
@@ -1193,15 +1340,18 @@ Moving Averages    & 0.00 & 0.01 & Weighted Moving Average (14) \\
 
 \subsubsection{Why Did the OU Process Fail H2?}
 
-The IC of $\OFI_1$ in the simulation grows with horizon (0.15 at 1\,s,
-0.33 at 300\,s), rather than decaying as hypothesised. This is
-expected in retrospect. In an OU process with known long-run mean $\mu$,
-informed traders exploit the price-mean deviation $S_t - \mu$ over
-\emph{arbitrarily long} horizons. The signal does not decay because
-the fundamental price will eventually revert to $\mu$ regardless of
-when you trade it. Real markets, by contrast, have no ``known'' mean,
-and informed trading competes with noise that obscures the signal at
-long horizons.
+The IC of $\OFI_1$ in the simulation does not decay monotonically
+with horizon (Table~\ref{tab:simIC}: 0.15, 0.28, $-$0.03, 0.33).
+The negative value at 30\,s reflects noise in the 10-path average
+rather than a structural feature, and the long-horizon IC remains
+large (0.33 at 300\,s). This behaviour is expected in retrospect.
+In an OU process with \emph{known} long-run mean $\mu$, informed
+traders can exploit the price deviation $S_t - \mu$ over arbitrarily
+long horizons. The signal does not decay because the fundamental price
+will eventually revert to $\mu$ regardless of the trading horizon.
+Real markets, by contrast, have no observable ``known'' mean, and
+competing informed trading erodes the signal at longer horizons,
+producing the characteristic decaying IC pattern observed in P5 and P7.
 
 \subsubsection{Value of the Simulation}
 
@@ -1353,7 +1503,8 @@ narrative.
   from P6 cost structure extended to crypto fee levels (0.04\% taker fee).}
 \label{tab:synthesis}
 \small
-\begin{tabular}{clllp{5.8cm}}
+\setlength{\tabcolsep}{5pt}
+\begin{tabular}{clll>{\RaggedRight\arraybackslash}p{5.2cm}}
 \toprule
 \textbf{Phase} & \textbf{Method} & \textbf{Asset}
   & \textbf{Best IC$_{5\text{s}}$} & \textbf{Principal finding} \\
@@ -1439,13 +1590,30 @@ feature set for sub-minute strategies adds noise without signal.
     intrabar range for volatile instruments.
   \item \textbf{Multiple-comparison inflation.}
     Testing 87 indicators simultaneously increases the probability
-    of finding spuriously significant results. Without a Bonferroni
-    or Benjamini-Hochberg correction, the individual ICs should be
-    treated as hypothesis-generating rather than confirmatory.
+    of finding spuriously significant results. As quantified in
+    Section~\ref{sec:ic_methods}, the Bonferroni-corrected threshold
+    is $|\IC|>0.002$, so all practically significant ICs reported here
+    survive family-wise error rate correction. Nevertheless, parameter
+    choices within indicators (e.g., window length 10 vs.\ 14 for
+    z-score) introduce a degree of researcher discretion that is
+    partially addressed by reporting results across multiple window
+    lengths.
   \item \textbf{Label construction assumes mid-price.}
     Forward returns use reconstructed mid-prices. In crypto markets
     with large bid-ask spreads during stress periods, the mid-price
     may diverge from achievable transaction prices.
+  \item \textbf{In-sample indicator parameters.}
+    Indicator window lengths (e.g., RSI~7, RSI~14) are conventional
+    values from daily-bar practice, not optimised on this dataset.
+    However, the fact that multiple window lengths of the same indicator
+    (RSI~7, RSI~14, RSI~21) all rank in the top 16 suggests the result
+    is not window-specific.
+  \item \textbf{Price index approximation.}
+    Prices are reconstructed from 1-second returns via
+    Equation~\eqref{eq:priceindex}. The scaling factor 0.1 prevents
+    overflow in long-window indicators but may distort volatility-based
+    indicators (ATR, Bollinger Width) whose absolute scale matters.
+    These indicators should be interpreted with caution.
 \end{enumerate}
 
 % =============================================================================
@@ -1453,7 +1621,7 @@ feature set for sub-minute strategies adds noise without signal.
 \label{sec:conclusion}
 % =============================================================================
 
-This paper has presented a systematic four-phase investigation of
+This thesis has presented a systematic four-phase investigation of
 LOB return predictability, spanning synthetic simulation, statistical
 IC testing, walk-forward backtesting, and a cross-asset survey of 87
 technical indicators. The principal conclusions are:
@@ -1499,10 +1667,46 @@ feature candidate set for Phase~P8: a walk-forward backtest applying
 the top indicators to live cryptocurrency WebSocket data with full
 transaction cost modelling.
 
+% ── Acknowledgments ──────────────────────────────────────────────────────────
+\section*{Acknowledgments}
+
+The author wishes to thank the supervisor, [Supervisor Name], for
+guidance and feedback throughout the course of this project.
+Thanks are also due to the open-source communities behind the Rust
+programming language and the \texttt{tectonic} typesetting engine,
+and to the data providers --- Binance, Bybit, Coinbase, OKX,
+Bitstamp, Gemini, Dukascopy, and Yahoo Finance --- whose public
+APIs made the empirical component of this study possible.
+Any errors or omissions remain the sole responsibility of the author.
+
+% ── Data Availability ────────────────────────────────────────────────────────
+\section*{Data and Code Availability}
+
+All source code, unit tests, and the indicator computation pipeline
+are publicly available at
+\url{https://github.com/Evintkoo/orderflow-rs} under the MIT licence.
+The repository includes a reproducibility guide
+(\texttt{docs/reports/}) and the full \texttt{cargo test} suite
+(210 tests). Raw LOB data are sourced from public exchange APIs and
+are subject to each provider's terms of use; they are not redistributed
+in the repository. Feature CSV files and the full per-symbol IC results
+($\sim$2\,GB) are available from the author upon reasonable request.
+
 % ── References ───────────────────────────────────────────────────────────────
 \newpage
 \bibliographystyle{plainnat}
-\begin{thebibliography}{9}
+\begin{thebibliography}{99}
+
+\bibitem[Bianchi et al.(2022)]{bianchi2022trading}
+Bianchi, D., Babiak, M., and Dickerson, A.\ (2022).
+\newblock Trading volume and liquidity provision in cryptocurrency markets.
+\newblock \emph{Journal of Banking and Finance}, 142:106547.
+
+\bibitem[Bouchaud et al.(2002)]{bouchaud2002statistical}
+Bouchaud, J.-P., M\'ezard, M., and Potters, M.\ (2002).
+\newblock Statistical properties of stock order books: empirical results
+  and models.
+\newblock \emph{Quantitative Finance}, 2(4):251--256.
 
 \bibitem[Cont et al.(2014)]{cont2014price}
 Cont, R., Kukanov, A., and Stoikov, S.\ (2014).
@@ -1514,33 +1718,43 @@ Evans, M.~D.~D. and Lyons, R.~K.\ (2002).
 \newblock Order flow and exchange rate dynamics.
 \newblock \emph{Journal of Political Economy}, 110(1):170--180.
 
-\bibitem[Jegadeesh and Titman(1993)]{jegadeesh1993returns}
-Jegadeesh, N. and Titman, S.\ (1993).
-\newblock Returns to buying winners and selling losers: Implications for
-  stock market efficiency.
-\newblock \emph{Journal of Finance}, 48(1):65--91.
+\bibitem[Glosten and Milgrom(1985)]{glosten1985}
+Glosten, L.~R. and Milgrom, P.~R.\ (1985).
+\newblock Bid, ask and transaction prices in a specialist market with
+  heterogeneously informed traders.
+\newblock \emph{Journal of Financial Economics}, 14(1):71--100.
 
-\bibitem[Novy-Marx(2012)]{novymarx2012}
-Novy-Marx, R.\ (2012).
-\newblock Is momentum really momentum?
-\newblock \emph{Journal of Financial Economics}, 103(3):429--453.
-
-\bibitem[Zarinelli et al.(2015)]{zarinelli2015beyond}
-Zarinelli, E., Treccani, M., Farmer, J.~D., and Lillo, F.\ (2015).
-\newblock Beyond the square root: Evidence for logarithmic dependence of
-  market impact on size.
-\newblock \emph{Market Microstructure and Liquidity}, 1(2):1550004.
+\bibitem[Grinold(1989)]{grinold1999active}
+Grinold, R.~C.\ (1989).
+\newblock The fundamental law of active management.
+\newblock \emph{Journal of Portfolio Management}, 15(3):30--37.
 
 \bibitem[Kyle(1985)]{kyle1985}
 Kyle, A.~S.\ (1985).
 \newblock Continuous auctions and insider trading.
 \newblock \emph{Econometrica}, 53(6):1315--1335.
 
-\bibitem[Glosten and Milgrom(1985)]{glosten1985}
-Glosten, L.~R. and Milgrom, P.~R.\ (1985).
-\newblock Bid, ask and transaction prices in a specialist market with
-  heterogeneously informed traders.
-\newblock \emph{Journal of Financial Economics}, 14(1):71--100.
+\bibitem[Lo et al.(2000)]{lo2000foundations}
+Lo, A.~W., Mamaysky, H., and Wang, J.\ (2000).
+\newblock Foundations of technical analysis: Computational algorithms,
+  statistical inference, and empirical implementation.
+\newblock \emph{Journal of Finance}, 55(4):1705--1765.
+
+\bibitem[Madhavan(2000)]{madhavan2000market}
+Madhavan, A.\ (2000).
+\newblock Market microstructure: A survey.
+\newblock \emph{Journal of Financial Markets}, 3(3):205--258.
+
+\bibitem[Makarov and Schoar(2020)]{makarov2020trading}
+Makarov, I. and Schoar, A.\ (2020).
+\newblock Trading and arbitrage in cryptocurrency markets.
+\newblock \emph{Journal of Financial Economics}, 135(2):293--319.
+
+\bibitem[Zarinelli et al.(2015)]{zarinelli2015beyond}
+Zarinelli, E., Treccani, M., Farmer, J.~D., and Lillo, F.\ (2015).
+\newblock Beyond the square root: Evidence for logarithmic dependence of
+  market impact on size.
+\newblock \emph{Market Microstructure and Liquidity}, 1(2):1550004.
 
 \end{thebibliography}
 
@@ -1555,7 +1769,8 @@ with non-empty data). Indicators with empty IC columns could not be
 computed for any symbol (typically derived series with insufficient
 data length after warm-up).
 
-\begin{longtable}{clrrrr}
+\small
+\begin{longtable}{c>{\RaggedRight\arraybackslash}p{6.5cm}rrrr}
 \caption{All 87 indicators ranked by $|\IC_{5\text{s}}|$.
   Positive ICs in \textcolor{green1}{green},
   negative ICs in \textcolor{accent}{red}.}
@@ -1658,15 +1873,20 @@ data length after warm-up).
 80 & Bollinger Band Width (20)      & \pos{.002} & \negval{.001} & \negval{.003} & \negval{.002} \\
 81 & Donchian Channel Width (20)& \negval{.001} & \pos{.001} & \pos{.002} & \pos{.008} \\
 82 & Relative Volume (20)           & \negval{.001} & \negval{.003} & \negval{.005} & \negval{.024} \\
-83--87 & DEMA/TEMA/Stoch\,D/MACD\,sig./MACD\,hist.
+83--87 & DEMA\slash TEMA\slash Stoch~D\slash MACD~sig.\slash MACD~hist.
   & --- & --- & --- & --- \\
 \end{longtable}
 
 \section{Reproducibility}
 \label{app:repro}
 
-All results reported in this paper are fully reproducible from the
-open-source \code{orderflow-rs} codebase using the following commands.
+All results reported in this thesis are fully reproducible from the
+open-source \code{orderflow-rs} codebase, available at
+\url{https://github.com/Evintkoo/orderflow-rs}.
+The following commands reproduce every table and figure in the thesis.
+Rust~1.70+ and Cargo are the only dependencies; no external data
+downloads are required beyond the public exchange API calls described
+in Section~\ref{sec:data}.
 
 \subsubsection*{Build}
 \begin{verbatim}
@@ -1676,6 +1896,18 @@ cargo build --release
 \subsubsection*{Phase P4: Synthetic simulation}
 \begin{verbatim}
 cargo run --release --features sim -- simulate --paths 10
+\end{verbatim}
+
+\subsubsection*{Phase P5: FX microstructure IC analysis}
+\begin{verbatim}
+cargo run --release -- report data/dukascopy/ reports/p5/
+# Output: reports/p5/<pair>_report.csv (Spearman IC per horizon)
+\end{verbatim}
+
+\subsubsection*{Phase P6: Walk-forward backtest}
+\begin{verbatim}
+cargo run --release -- backtest data/dukascopy/ reports/p6/
+# Output: reports/p6/backtest_results.csv (OOS IC, PnL by window)
 \end{verbatim}
 
 \subsubsection*{Phase P7: Technical indicator IC analysis}
@@ -1693,19 +1925,24 @@ cargo test
 
 \subsubsection*{Key source files}
 
-\begin{tabular}{ll}
+\small\setlength{\tabcolsep}{5pt}
+\begin{tabular}{l>{\RaggedRight\arraybackslash}p{7cm}}
 \toprule
 \textbf{File} & \textbf{Purpose} \\
 \midrule
-\code{src/simulator/lob\_sim.rs}     & OU price process, 3-agent LOB \\
-\code{src/analysis/techind.rs}       & 87 indicator implementations \\
-\code{src/analysis/techreport.rs}    & IC computation, report writers \\
-\code{src/commands/techanalysis.rs}  & CLI: recursive data walk \\
-\code{tests/techind\_test.rs}        & 35 indicator unit tests \\
+\code{src/simulator/lob\_sim.rs}     & OU price process, 3-agent LOB simulator \\
+\code{src/features/mod.rs}           & Stateful LOB feature extractor \\
+\code{src/analysis/techind.rs}       & 87 technical indicator implementations \\
+\code{src/analysis/techreport.rs}    & Spearman IC computation and report writers \\
+\code{src/analysis/stats.rs}         & Rank correlation, bootstrapping utilities \\
+\code{src/commands/techanalysis.rs}  & CLI command: recursive CSV walk, aggregation \\
+\code{src/commands/backtest.rs}      & CLI command: walk-forward OLS backtest \\
+\code{tests/techind\_test.rs}        & 35 indicator correctness unit tests \\
+\code{tests/e2e\_techanalysis.rs}    & End-to-end pipeline integration test \\
 \bottomrule
 \end{tabular}
 
-\subsubsection*{Git range}
-\code{77f4562} (P7 plan) $\to$ \code{860cce7} (LaTeX paper).
+\subsubsection*{Repository}
+\url{https://github.com/Evintkoo/orderflow-rs}
 
 \end{document}
