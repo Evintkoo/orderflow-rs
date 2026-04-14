@@ -1,4 +1,61 @@
 #[cfg(test)]
+mod report_tests {
+    use orderflow_rs::analysis::techreport::{compute_ic_table, IcRow};
+    use orderflow_rs::analysis::techind::{TechData, IndicatorSeries};
+
+    #[test]
+    fn ic_table_produces_rows() {
+        let n = 200;
+        let prices: Vec<f64> = (0..n).map(|i| 1.0 + i as f64 * 0.001).collect();
+        let r_1s: Vec<Option<f64>> = (0..n).map(|i| Some(0.001 + (i as f64 * 0.1).sin() * 0.0005)).collect();
+        let mut td = TechData::new(
+            (0..n as i64).collect(),
+            prices.clone(),
+            prices.iter().map(|p| p + 0.001).collect(),
+            prices.iter().map(|p| p - 0.001).collect(),
+            vec![100.0; n],
+            vec![0.0001; n],
+            r_1s.clone(), r_1s.clone(), r_1s.clone(), r_1s.clone(),
+        );
+        td.indicators.push(IndicatorSeries {
+            name: "test_indicator",
+            values: (0..n).map(|i| Some(i as f64 * 0.001)).collect(),
+        });
+        let rows = compute_ic_table(&td);
+        assert!(!rows.is_empty());
+        assert_eq!(rows[0].name, "test_indicator");
+    }
+
+    #[test]
+    fn write_reports_creates_files() {
+        use orderflow_rs::analysis::techreport::{write_ic_report, write_summary_report};
+        use std::fs;
+
+        let dir = tempfile::tempdir().unwrap();
+        let rows = vec![
+            IcRow { name: "sma_20".into(), ic_1s: Some(0.05), ic_5s: Some(0.08), ic_30s: Some(0.02), ic_300s: Some(-0.01) },
+            IcRow { name: "rsi_14".into(), ic_1s: None, ic_5s: Some(-0.03), ic_30s: None, ic_300s: Some(0.04) },
+        ];
+        write_ic_report("EURUSD", &rows, dir.path().to_str().unwrap()).unwrap();
+        let csv = dir.path().join("EURUSD_techanalysis.csv");
+        assert!(csv.exists(), "CSV should be created");
+        let content = fs::read_to_string(&csv).unwrap();
+        assert!(content.contains("sma_20"));
+        assert!(content.contains("0.050000"));
+
+        // Summary
+        let per_pair = vec![
+            ("EURUSD".into(), rows.clone()),
+        ];
+        write_summary_report(&per_pair, dir.path().to_str().unwrap()).unwrap();
+        let summary = dir.path().join("summary_techanalysis.csv");
+        assert!(summary.exists());
+        let sc = fs::read_to_string(&summary).unwrap();
+        assert!(sc.contains("sma_20"));
+    }
+}
+
+#[cfg(test)]
 mod loader_tests {
     use orderflow_rs::analysis::techreport::load_techdata;
     use std::io::Write as IoWrite;
