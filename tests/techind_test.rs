@@ -154,3 +154,57 @@ mod trend_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod momentum_tests {
+    use orderflow_rs::analysis::techind::{rsi, macd_components, cci, williams_r, stoch_k, stoch_d, roc, momentum, cmo, dpo, awesome_osc};
+
+    #[test]
+    fn rsi_range() {
+        let n = 30;
+        let p: Vec<f64> = (0..n).map(|i| 10.0 + (i as f64 * 0.5).sin()).collect();
+        let result = rsi(&p, 14);
+        assert_eq!(result.len(), n);
+        for v in result.iter().filter_map(|x| *x) {
+            assert!(v >= 0.0 && v <= 100.0, "RSI out of [0,100]: {v}");
+        }
+    }
+
+    #[test]
+    fn macd_line_positive_for_rising() {
+        let p: Vec<f64> = (0..100).map(|i| 1.0 + i as f64 * 0.01).collect();
+        let (line, signal, hist) = macd_components(&p, 12, 26, 9);
+        let last_line = line.iter().rev().find_map(|x| *x).unwrap();
+        assert!(last_line > 0.0, "MACD line should be positive for rising prices");
+        assert_eq!(line.len(), 100);
+        assert_eq!(signal.len(), 100);
+        assert_eq!(hist.len(), 100);
+    }
+
+    #[test]
+    fn cci_varies() {
+        let n = 30;
+        let h: Vec<f64> = (0..n).map(|i| 1.0 + (i as f64 * 0.3).sin() * 0.1).collect();
+        let l: Vec<f64> = h.iter().map(|x| x - 0.005).collect();
+        let c: Vec<f64> = h.iter().map(|x| x - 0.002).collect();
+        let result = cci(&h, &l, &c, 20);
+        let vals: Vec<f64> = result.iter().filter_map(|x| *x).collect();
+        assert!(!vals.is_empty());
+        let range = vals.iter().cloned().fold(f64::NEG_INFINITY, f64::max)
+                  - vals.iter().cloned().fold(f64::INFINITY, f64::min);
+        assert!(range > 0.1, "CCI should vary: range={range}");
+    }
+
+    #[test]
+    fn stoch_range() {
+        let n = 20;
+        let h: Vec<f64> = (0..n).map(|i| 1.0 + (i as f64 * 0.3).sin() * 0.1 + 0.001).collect();
+        let l: Vec<f64> = h.iter().map(|x| x - 0.005).collect();
+        let c: Vec<f64> = h.iter().map(|x| x - 0.002).collect();
+        let k = stoch_k(&h, &l, &c, 14);
+        let d = stoch_d(&h, &l, &c, 14);
+        for v in k.iter().chain(d.iter()).filter_map(|x| *x) {
+            assert!(v >= 0.0 && v <= 100.0, "Stoch out of [0,100]: {v}");
+        }
+    }
+}

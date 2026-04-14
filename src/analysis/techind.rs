@@ -362,3 +362,182 @@ pub fn supertrend(highs: &[f64], lows: &[f64], closes: &[f64], period: usize, mu
     }
     out
 }
+
+// ─── Momentum Oscillators ─────────────────────────────────────────────────────
+
+/// Wilder RSI.
+pub fn rsi(prices: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if period == 0 || period >= n { return out; }
+    let mut avg_gain = 0.0_f64;
+    let mut avg_loss = 0.0_f64;
+    for i in 1..=period {
+        let d = prices[i] - prices[i-1];
+        if d > 0.0 { avg_gain += d; } else { avg_loss -= d; }
+    }
+    avg_gain /= period as f64;
+    avg_loss /= period as f64;
+    let rs = if avg_loss > 1e-12 { avg_gain / avg_loss } else { 100.0 };
+    out[period] = Some(100.0 - 100.0 / (1.0 + rs));
+    for i in (period+1)..n {
+        let d = prices[i] - prices[i-1];
+        let gain = if d > 0.0 { d } else { 0.0 };
+        let loss = if d < 0.0 { -d } else { 0.0 };
+        avg_gain = (avg_gain * (period as f64 - 1.0) + gain) / period as f64;
+        avg_loss = (avg_loss * (period as f64 - 1.0) + loss) / period as f64;
+        let rs2 = if avg_loss > 1e-12 { avg_gain / avg_loss } else { 100.0 };
+        out[i] = Some(100.0 - 100.0 / (1.0 + rs2));
+    }
+    out
+}
+
+/// MACD: returns (line, signal, histogram).
+pub fn macd_components(prices: &[f64], fast: usize, slow: usize, signal_p: usize)
+    -> (Vec<Option<f64>>, Vec<Option<f64>>, Vec<Option<f64>>)
+{
+    let n = prices.len();
+    let ema_fast = ema(prices, fast);
+    let ema_slow = ema(prices, slow);
+    let line: Vec<Option<f64>> = (0..n).map(|i| match (ema_fast[i], ema_slow[i]) {
+        (Some(f), Some(s)) => Some(f - s),
+        _ => None,
+    }).collect();
+    let line_vals: Vec<f64> = line.iter().map(|v| v.unwrap_or(f64::NAN)).collect();
+    let signal = ema(&line_vals, signal_p);
+    let hist: Vec<Option<f64>> = (0..n).map(|i| match (line[i], signal[i]) {
+        (Some(l), Some(s)) if s.is_finite() => Some(l - s),
+        _ => None,
+    }).collect();
+    (line, signal, hist)
+}
+
+/// Commodity Channel Index.
+pub fn cci(highs: &[f64], lows: &[f64], closes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    let tp: Vec<f64> = (0..n).map(|i| (highs[i] + lows[i] + closes[i]) / 3.0).collect();
+    for i in (period-1)..n {
+        let window = &tp[(i+1-period)..=i];
+        let mean: f64 = window.iter().sum::<f64>() / period as f64;
+        let mad: f64 = window.iter().map(|x| (x - mean).abs()).sum::<f64>() / period as f64;
+        if mad > 1e-12 {
+            out[i] = Some((tp[i] - mean) / (0.015 * mad));
+        }
+    }
+    out
+}
+
+/// Williams %R.
+pub fn williams_r(highs: &[f64], lows: &[f64], closes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    for i in (period-1)..n {
+        let hh = highs[(i+1-period)..=i].iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let ll = lows[(i+1-period)..=i].iter().cloned().fold(f64::INFINITY, f64::min);
+        let range = hh - ll;
+        if range > 1e-12 {
+            out[i] = Some(-100.0 * (hh - closes[i]) / range);
+        }
+    }
+    out
+}
+
+/// Stochastic %K.
+pub fn stoch_k(highs: &[f64], lows: &[f64], closes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    for i in (period-1)..n {
+        let hh = highs[(i+1-period)..=i].iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let ll = lows[(i+1-period)..=i].iter().cloned().fold(f64::INFINITY, f64::min);
+        let range = hh - ll;
+        if range > 1e-12 {
+            out[i] = Some(100.0 * (closes[i] - ll) / range);
+        }
+    }
+    out
+}
+
+/// Stochastic %D = SMA(K, 3).
+pub fn stoch_d(highs: &[f64], lows: &[f64], closes: &[f64], k_period: usize) -> Vec<Option<f64>> {
+    let k = stoch_k(highs, lows, closes, k_period);
+    let k_vals: Vec<f64> = k.iter().map(|v| v.unwrap_or(f64::NAN)).collect();
+    sma(&k_vals, 3).iter().map(|v| match v {
+        Some(x) if x.is_finite() => Some(*x),
+        _ => None,
+    }).collect()
+}
+
+/// Rate of Change: 100 * (price[i] - price[i-n]) / price[i-n].
+pub fn roc(prices: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    for i in period..n {
+        if prices[i - period].abs() > 1e-12 {
+            out[i] = Some(100.0 * (prices[i] - prices[i - period]) / prices[i - period]);
+        }
+    }
+    out
+}
+
+/// Raw momentum: price[i] - price[i-period].
+pub fn momentum(prices: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    for i in period..n {
+        out[i] = Some(prices[i] - prices[i - period]);
+    }
+    out
+}
+
+/// Chande Momentum Oscillator.
+pub fn cmo(prices: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if period == 0 || period >= n { return out; }
+    for i in period..n {
+        let mut su = 0.0_f64;
+        let mut sd = 0.0_f64;
+        for j in (i-period+1)..=i {
+            let d = prices[j] - prices[j-1];
+            if d > 0.0 { su += d; } else { sd -= d; }
+        }
+        let denom = su + sd;
+        if denom > 1e-12 {
+            out[i] = Some(100.0 * (su - sd) / denom);
+        }
+    }
+    out
+}
+
+/// Detrended Price Oscillator: close - SMA(close, period) shifted back (period/2 + 1) bars.
+pub fn dpo(prices: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if period == 0 { return out; }
+    let shift = period / 2 + 1;
+    let sma_v = sma(prices, period);
+    for i in (period + shift - 1)..n {
+        if let Some(s) = sma_v[i.saturating_sub(shift)] {
+            if s.is_finite() {
+                out[i] = Some(prices[i] - s);
+            }
+        }
+    }
+    out
+}
+
+/// Awesome Oscillator: SMA(midpoint, 5) - SMA(midpoint, 34).
+pub fn awesome_osc(highs: &[f64], lows: &[f64]) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let mid: Vec<f64> = (0..n).map(|i| (highs[i] + lows[i]) / 2.0).collect();
+    let fast = sma(&mid, 5);
+    let slow = sma(&mid, 34);
+    (0..n).map(|i| match (fast[i], slow[i]) {
+        (Some(f), Some(s)) => Some(f - s),
+        _ => None,
+    }).collect()
+}
