@@ -253,3 +253,43 @@ mod volatility_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod volume_tests {
+    use orderflow_rs::analysis::techind::{obv, mfi, vwap_deviation, rvol};
+
+    #[test]
+    fn obv_rises_on_up_days() {
+        let closes = vec![1.0, 1.01, 1.02, 1.01, 1.03];
+        let vols   = vec![100.0; 5];
+        let result = obv(&closes, &vols);
+        assert_eq!(result.len(), 5);
+        // Day 1→2: up, so OBV should rise
+        assert!(result[1] > result[0]);
+        // Day 3→4: down, so OBV should fall
+        assert!(result[3] < result[2]);
+    }
+
+    #[test]
+    fn mfi_range() {
+        let n = 20;
+        let h: Vec<f64> = (0..n).map(|i| 1.0 + (i as f64 * 0.5).sin() * 0.1).collect();
+        let l: Vec<f64> = h.iter().map(|x| x - 0.005).collect();
+        let c: Vec<f64> = h.iter().map(|x| x - 0.002).collect();
+        let vol: Vec<f64> = vec![100.0; n];
+        let result = mfi(&h, &l, &c, &vol, 14);
+        for v in result.iter().filter_map(|x| *x) {
+            assert!(v >= 0.0 && v <= 100.0, "MFI out of [0,100]: {v}");
+        }
+    }
+
+    #[test]
+    fn rvol_positive() {
+        let n = 30;
+        let vol: Vec<f64> = (0..n).map(|i| 100.0 + i as f64 * 10.0).collect();
+        let result = rvol(&vol, 20);
+        for v in result.iter().skip(20).filter_map(|x| *x) {
+            assert!(v > 0.0, "RVOL should be positive");
+        }
+    }
+}

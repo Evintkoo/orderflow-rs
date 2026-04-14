@@ -688,3 +688,120 @@ pub fn squeeze_signal(highs: &[f64], lows: &[f64], closes: &[f64], period: usize
         _ => None,
     }).collect()
 }
+
+// ─── Volume ───────────────────────────────────────────────────────────────────
+
+/// On-Balance Volume (cumulative).
+pub fn obv(closes: &[f64], volumes: &[f64]) -> Vec<f64> {
+    let n = closes.len();
+    let mut out = vec![0.0_f64; n];
+    for i in 1..n {
+        out[i] = out[i-1] + if closes[i] > closes[i-1] { volumes[i] }
+                             else if closes[i] < closes[i-1] { -volumes[i] }
+                             else { 0.0 };
+    }
+    out
+}
+
+/// Volume-Weighted Average Price (running from bar 0).
+/// Returns raw VWAP values.
+pub fn vwap(highs: &[f64], lows: &[f64], closes: &[f64], volumes: &[f64]) -> Vec<f64> {
+    let n = highs.len();
+    let mut cum_tv = 0.0_f64;
+    let mut cum_v  = 0.0_f64;
+    let mut out = vec![0.0_f64; n];
+    for i in 0..n {
+        let tp = (highs[i] + lows[i] + closes[i]) / 3.0;
+        cum_tv += tp * volumes[i];
+        cum_v  += volumes[i];
+        out[i] = if cum_v > 1e-12 { cum_tv / cum_v } else { closes[i] };
+    }
+    out
+}
+
+/// VWAP deviation: (close - VWAP) / close. Normalized for IC analysis.
+pub fn vwap_deviation(highs: &[f64], lows: &[f64], closes: &[f64], volumes: &[f64]) -> Vec<Option<f64>> {
+    let vwap_v = vwap(highs, lows, closes, volumes);
+    closes.iter().zip(vwap_v.iter()).map(|(c, vw)| {
+        if *c > 1e-12 { Some((c - vw) / c) } else { None }
+    }).collect()
+}
+
+/// Money Flow Index (volume-weighted RSI of typical price).
+pub fn mfi(highs: &[f64], lows: &[f64], closes: &[f64], volumes: &[f64], period: usize)
+    -> Vec<Option<f64>>
+{
+    let n = highs.len();
+    let mut out = vec![None; n];
+    if period == 0 || period >= n { return out; }
+    let tp: Vec<f64> = (0..n).map(|i| (highs[i] + lows[i] + closes[i]) / 3.0).collect();
+    for i in period..n {
+        let mut pos_mf = 0.0_f64;
+        let mut neg_mf = 0.0_f64;
+        for j in (i - period + 1)..=i {
+            let mf = tp[j] * volumes[j];
+            if tp[j] >= tp[j-1] { pos_mf += mf; } else { neg_mf += mf; }
+        }
+        let denom = pos_mf + neg_mf;
+        if denom > 1e-12 {
+            out[i] = Some(100.0 * pos_mf / denom);
+        }
+    }
+    out
+}
+
+/// Force Index: EMA of (close - prev_close) * volume.
+pub fn force_index(closes: &[f64], volumes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = closes.len();
+    let fi: Vec<f64> = (0..n).map(|i| {
+        if i == 0 { 0.0 } else { (closes[i] - closes[i-1]) * volumes[i] }
+    }).collect();
+    ema(&fi, period)
+}
+
+/// Ease of Movement: normalized ratio of price movement to volume.
+pub fn ease_of_movement(highs: &[f64], lows: &[f64], volumes: &[f64], period: usize)
+    -> Vec<Option<f64>>
+{
+    let n = highs.len();
+    let mut raw = vec![0.0_f64; n];
+    for i in 1..n {
+        let mid_move = (highs[i] + lows[i]) / 2.0 - (highs[i-1] + lows[i-1]) / 2.0;
+        let hl = highs[i] - lows[i];
+        let vol_norm = if volumes[i] > 1e-12 { volumes[i] / 1_000_000.0 } else { 1.0 };
+        raw[i] = if hl.abs() > 1e-12 { mid_move / (vol_norm * hl) } else { 0.0 };
+    }
+    sma(&raw, period)
+}
+
+/// Volume Price Trend: cumulative (return / prev_close) * volume.
+pub fn vpt(closes: &[f64], volumes: &[f64]) -> Vec<f64> {
+    let n = closes.len();
+    let mut out = vec![0.0_f64; n];
+    for i in 1..n {
+        let ret = if closes[i-1] > 1e-12 { (closes[i] - closes[i-1]) / closes[i-1] } else { 0.0 };
+        out[i] = out[i-1] + ret * volumes[i];
+    }
+    out
+}
+
+/// Volume Rate of Change.
+pub fn vroc(volumes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = volumes.len();
+    let mut out = vec![None; n];
+    for i in period..n {
+        if volumes[i - period] > 1e-12 {
+            out[i] = Some(100.0 * (volumes[i] - volumes[i - period]) / volumes[i - period]);
+        }
+    }
+    out
+}
+
+/// Relative Volume: current bar / SMA(volume, period).
+pub fn rvol(volumes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let sma_v = sma(volumes, period);
+    volumes.iter().zip(sma_v.iter()).map(|(v, s)| match s {
+        Some(sv) if *sv > 1e-12 => Some(v / sv),
+        _ => None,
+    }).collect()
+}
