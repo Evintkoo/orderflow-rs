@@ -20,20 +20,28 @@ fn collect_feature_csvs(dir: &str) -> Vec<std::path::PathBuf> {
 }
 
 pub fn run(data_dir: &str, reports_dir: &str) -> Result<()> {
+    let root = Path::new(data_dir).canonicalize().unwrap_or_else(|_| Path::new(data_dir).to_path_buf());
     let csv_paths = collect_feature_csvs(data_dir);
     let mut per_pair: Vec<(String, Vec<crate::analysis::techreport::IcRow>)> = Vec::new();
 
     for path in csv_paths {
         let fname = path.file_name().and_then(|f| f.to_str()).unwrap_or("").to_string();
-        // symbol = "subdir/NAME", e.g. "dukascopy/EURUSD"
+        let base = fname.trim_end_matches("_features.csv");
+
+        // Build symbol as path relative to data_dir root, minus the filename suffix.
+        // e.g. data/dukascopy/EURUSD_features.csv → "dukascopy/EURUSD"
+        //      data/EURUSD_features.csv            → "EURUSD"
         let symbol = {
-            let parent = path.parent()
-                .and_then(|p| p.file_name())
-                .and_then(|f| f.to_str())
-                .unwrap_or("unknown");
-            let base = fname.trim_end_matches("_features.csv");
-            format!("{parent}/{base}")
+            let abs = path.canonicalize().unwrap_or_else(|_| path.clone());
+            if let Ok(rel) = abs.strip_prefix(&root) {
+                rel.to_str()
+                    .map(|s| s.trim_end_matches("_features.csv").to_string())
+                    .unwrap_or_else(|| base.to_string())
+            } else {
+                base.to_string()
+            }
         };
+
         let path_str = path.to_str().unwrap_or("").to_string();
 
         let mut td = match load_techdata(&path_str) {
