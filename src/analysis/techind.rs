@@ -1048,3 +1048,118 @@ pub fn hurst(prices: &[f64], window: usize) -> Vec<Option<f64>> {
     }
     out
 }
+
+// ─── Microstructure ───────────────────────────────────────────────────────────
+
+/// Amihud illiquidity: mean(|log_return| / volume) over `period`.
+pub fn amihud_illiquidity(closes: &[f64], volumes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = closes.len();
+    let mut out = vec![None; n];
+    if period == 0 || period >= n { return out; }
+    let log_ret: Vec<f64> = (0..n).map(|i| {
+        if i == 0 || closes[i-1] < 1e-12 { 0.0 }
+        else { (closes[i] / closes[i-1]).ln().abs() }
+    }).collect();
+    for i in period..n {
+        let sum: f64 = (i-period..i).map(|j| {
+            if volumes[j] > 1e-12 { log_ret[j] / volumes[j] } else { 0.0 }
+        }).sum();
+        out[i] = Some(sum / period as f64);
+    }
+    out
+}
+
+/// Roll (1984) effective spread estimate: 2 * sqrt(max(-cov(ret_t, ret_t-1), 0)).
+pub fn roll_spread_est(closes: &[f64], window: usize) -> Vec<Option<f64>> {
+    let n = closes.len();
+    let mut out = vec![None; n];
+    if window == 0 || window + 1 > n { return out; }
+    let ret: Vec<f64> = (0..n).map(|i| {
+        if i == 0 || closes[i-1] < 1e-12 { 0.0 } else { closes[i] - closes[i-1] }
+    }).collect();
+    for i in (window + 1)..n {
+        let r  = &ret[(i - window)..i];
+        let rl = &ret[(i - window - 1)..(i - 1)];
+        let nf = window as f64;
+        let mr  = r.iter().sum::<f64>()  / nf;
+        let mrl = rl.iter().sum::<f64>() / nf;
+        let cov: f64 = r.iter().zip(rl.iter())
+            .map(|(a, b)| (a - mr) * (b - mrl))
+            .sum::<f64>() / nf;
+        out[i] = Some(2.0 * (-cov).max(0.0).sqrt());
+    }
+    out
+}
+
+/// Kyle lambda proxy: |price_change| / sum(|ofi|) over `period`.
+pub fn kyle_lambda(closes: &[f64], ofi: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = closes.len();
+    let mut out = vec![None; n];
+    if period == 0 || period >= n { return out; }
+    for i in period..n {
+        let sum_ofi: f64 = ofi[(i-period)..i].iter().map(|x| x.abs()).sum();
+        if sum_ofi > 1e-12 && closes[i-period] > 1e-12 {
+            let dp = (closes[i] - closes[i-period]).abs();
+            out[i] = Some(dp / sum_ofi);
+        }
+    }
+    out
+}
+
+/// Effective spread proxy: spread / close (normalized half-spread).
+pub fn effective_spread(spreads: &[f64], closes: &[f64]) -> Vec<Option<f64>> {
+    spreads.iter().zip(closes.iter()).map(|(s, c)| {
+        if *c > 1e-12 { Some(s / c) } else { None }
+    }).collect()
+}
+
+/// Book pressure: OFI[i] normalized by max |OFI| in rolling `period` window.
+pub fn book_pressure_ind(ofi: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = ofi.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    for i in (period-1)..n {
+        let w = &ofi[(i+1-period)..=i];
+        let max_abs = w.iter().map(|x| x.abs()).fold(0.0_f64, f64::max);
+        if max_abs > 1e-12 {
+            out[i] = Some(ofi[i] / max_abs);
+        }
+    }
+    out
+}
+
+/// Spread oscillator: (spread - SMA(spread, period)) / SMA(spread, period).
+pub fn spread_osc(spreads: &[f64], period: usize) -> Vec<Option<f64>> {
+    let sma_v = sma(spreads, period);
+    spreads.iter().zip(sma_v.iter()).map(|(s, m)| match m {
+        Some(mv) if *mv > 1e-12 => Some((s - mv) / mv),
+        _ => None,
+    }).collect()
+}
+
+/// Spread change rate: (spread[i] - spread[i-1]) / spread[i-1].
+pub fn spread_change_rate(spreads: &[f64]) -> Vec<Option<f64>> {
+    let n = spreads.len();
+    let mut out = vec![None; n];
+    for i in 1..n {
+        if spreads[i-1] > 1e-12 {
+            out[i] = Some((spreads[i] - spreads[i-1]) / spreads[i-1]);
+        }
+    }
+    out
+}
+
+/// Information efficiency ratio: |net displacement| / total path length.
+pub fn info_efficiency_ratio(closes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = closes.len();
+    let mut out = vec![None; n];
+    if period == 0 || period >= n { return out; }
+    for i in period..n {
+        let total_path: f64 = (i-period+1..i).map(|j| (closes[j] - closes[j-1]).abs()).sum();
+        let net = (closes[i] - closes[i - period]).abs();
+        if total_path > 1e-12 {
+            out[i] = Some(net / total_path);
+        }
+    }
+    out
+}

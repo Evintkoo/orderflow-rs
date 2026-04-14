@@ -335,3 +335,38 @@ mod sr_stats_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod microstructure_tests {
+    use orderflow_rs::analysis::techind::{amihud_illiquidity, roll_spread_est, book_pressure_ind, spread_osc, info_efficiency_ratio};
+
+    #[test]
+    fn amihud_non_negative() {
+        let n = 30;
+        let p: Vec<f64> = (0..n).map(|i| 1.0 + (i as f64 * 0.3).sin() * 0.01).collect();
+        let vol: Vec<f64> = vec![1000.0; n];
+        let result = amihud_illiquidity(&p, &vol, 20);
+        for v in result.iter().skip(20).filter_map(|x| *x) {
+            assert!(v >= 0.0, "Amihud should be non-negative: {v}");
+        }
+    }
+
+    #[test]
+    fn book_pressure_range() {
+        let ofi: Vec<f64> = (0..25).map(|i| (i as f64 * 0.5).sin()).collect();
+        let result = book_pressure_ind(&ofi, 20);
+        for v in result.iter().filter_map(|x| *x) {
+            assert!(v >= -1.0 && v <= 1.0, "Book pressure out of [-1,1]: {v}");
+        }
+    }
+
+    #[test]
+    fn spread_osc_finite() {
+        let n = 30;
+        let spreads: Vec<f64> = (0..n).map(|i| 0.0001 + (i as f64 * 0.1).sin() * 0.00001).collect();
+        let result = spread_osc(&spreads, 20);
+        for v in result.iter().filter_map(|x| *x) {
+            assert!(v.is_finite(), "spread_osc should be finite: {v}");
+        }
+    }
+}
