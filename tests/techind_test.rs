@@ -102,3 +102,55 @@ mod moving_average_tests {
         assert_eq!(result.len(), 50);
     }
 }
+
+#[cfg(test)]
+mod trend_tests {
+    use orderflow_rs::analysis::techind::{atr, adx, aroon_up, aroon_down, choppiness, supertrend};
+
+    #[test]
+    fn atr_positive() {
+        let h = vec![1.01, 1.02, 1.03, 1.04, 1.05, 1.06, 1.07, 1.08, 1.09, 1.10,
+                     1.11, 1.12, 1.13, 1.14, 1.15];
+        let l: Vec<f64> = h.iter().map(|x| x - 0.005).collect();
+        let c: Vec<f64> = h.iter().map(|x| x - 0.002).collect();
+        let result = atr(&h, &l, &c, 14);
+        assert_eq!(result.len(), 15);
+        assert!(result[13].unwrap() > 0.0);
+    }
+
+    #[test]
+    fn adx_range() {
+        let n = 60;
+        let h: Vec<f64> = (0..n).map(|i| 1.0 + i as f64 * 0.01).collect();
+        let l: Vec<f64> = h.iter().map(|x| x - 0.005).collect();
+        let c: Vec<f64> = h.iter().map(|x| x - 0.002).collect();
+        let result = adx(&h, &l, &c, 14);
+        for v in result.iter().filter_map(|x| *x) {
+            assert!(v >= 0.0 && v <= 100.0, "ADX out of [0,100]: {}", v);
+        }
+    }
+
+    #[test]
+    fn aroon_range() {
+        let n = 40;
+        let h: Vec<f64> = (0..n).map(|i| 1.0 + (i as f64 * 0.7).sin() * 0.1).collect();
+        let l: Vec<f64> = h.iter().map(|x| x - 0.005).collect();
+        let up = aroon_up(&h, 25);
+        let dn = aroon_down(&l, 25);
+        for v in up.iter().chain(dn.iter()).filter_map(|x| *x) {
+            assert!(v >= 0.0 && v <= 100.0, "Aroon out of [0,100]");
+        }
+    }
+
+    #[test]
+    fn choppiness_range() {
+        let n = 30;
+        let h: Vec<f64> = (0..n).map(|i| 1.0 + (i as f64 * 0.4).sin() * 0.05 + i as f64 * 0.001).collect();
+        let l: Vec<f64> = h.iter().map(|x| x - 0.003).collect();
+        let c: Vec<f64> = h.iter().map(|x| x - 0.001).collect();
+        let result = choppiness(&h, &l, &c, 14);
+        for v in result.iter().filter_map(|x| *x) {
+            assert!(v >= 0.0 && v <= 200.0, "Choppiness extreme: {}", v);
+        }
+    }
+}
