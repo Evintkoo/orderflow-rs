@@ -336,6 +336,7 @@ pub fn supertrend(highs: &[f64], lows: &[f64], closes: &[f64], period: usize, mu
     let n = highs.len();
     let mut out = vec![None; n];
     let atr_v = atr(highs, lows, closes, period);
+    if period == 0 || period > n { return out; }
     let mut trend = 1.0_f64;
     let mut upper = 0.0_f64;
     let mut lower = 0.0_f64;
