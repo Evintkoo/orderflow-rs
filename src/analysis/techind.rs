@@ -1163,3 +1163,139 @@ pub fn info_efficiency_ratio(closes: &[f64], period: usize) -> Vec<Option<f64>> 
     }
     out
 }
+
+// ─── compute_all ──────────────────────────────────────────────────────────────
+
+/// Compute all indicators and populate `td.indicators`.
+/// `ofi` is the OFI_1 series (same length as `td.prices`).
+pub fn compute_all(td: &mut TechData, ofi: &[f64]) {
+    let p: Vec<f64> = td.prices.clone();
+    let h: Vec<f64> = td.highs.clone();
+    let l: Vec<f64> = td.lows.clone();
+    let v: Vec<f64> = td.volumes.clone();
+    let sp: Vec<f64> = td.spreads.clone();
+    // opens: p[0] = p[1], then p[i-1]
+    let mut opens = p.clone();
+    if opens.len() > 1 {
+        for i in (1..opens.len()).rev() { opens[i] = opens[i-1]; }
+    }
+
+    macro_rules! push_opt {
+        ($name:expr, $vals:expr) => {
+            td.indicators.push(IndicatorSeries { name: $name, values: $vals });
+        };
+    }
+    macro_rules! push_raw {
+        ($name:expr, $vals:expr) => {
+            td.indicators.push(IndicatorSeries {
+                name: $name,
+                values: $vals.into_iter().map(Some).collect(),
+            });
+        };
+    }
+
+    // ── Moving Averages ──────────────────────────────────────────────────────
+    push_opt!("sma_10",   sma(&p, 10));
+    push_opt!("sma_20",   sma(&p, 20));
+    push_opt!("sma_50",   sma(&p, 50));
+    push_opt!("sma_100",  sma(&p, 100));
+    push_opt!("sma_200",  sma(&p, 200));
+    push_opt!("ema_5",    ema(&p, 5));
+    push_opt!("ema_12",   ema(&p, 12));
+    push_opt!("ema_20",   ema(&p, 20));
+    push_opt!("ema_26",   ema(&p, 26));
+    push_opt!("ema_50",   ema(&p, 50));
+    push_opt!("ema_200",  ema(&p, 200));
+    push_opt!("wma_14",   wma(&p, 14));
+    push_opt!("dema_20",  dema(&p, 20));
+    push_opt!("tema_20",  tema(&p, 20));
+    push_opt!("hma_14",   hma(&p, 14));
+    push_opt!("kama_10",  kama(&p, 10));
+    push_opt!("golden_cross", golden_cross(&p, 5, 20));
+    push_opt!("death_cross",  death_cross(&p, 5, 20));
+
+    // ── Trend Strength ───────────────────────────────────────────────────────
+    let (adx_v, pdi_v, mdi_v) = adx_full(&h, &l, &p, 14);
+    push_opt!("adx_14",   adx_v);
+    push_opt!("pdi_14",   pdi_v);
+    push_opt!("mdi_14",   mdi_v);
+    push_opt!("aroon_up_25",   aroon_up(&h, 25));
+    push_opt!("aroon_down_25", aroon_down(&l, 25));
+    push_opt!("choppiness_14", choppiness(&h, &l, &p, 14));
+    push_opt!("supertrend_14", supertrend(&h, &l, &p, 14, 3.0));
+
+    // ── Momentum ─────────────────────────────────────────────────────────────
+    push_opt!("rsi_7",    rsi(&p, 7));
+    push_opt!("rsi_14",   rsi(&p, 14));
+    push_opt!("rsi_21",   rsi(&p, 21));
+    push_opt!("stoch_k_14",  stoch_k(&h, &l, &p, 14));
+    push_opt!("stoch_d_14",  stoch_d(&h, &l, &p, 14));
+    let (macd_l, macd_s, macd_h) = macd_components(&p, 12, 26, 9);
+    push_opt!("macd_line",   macd_l);
+    push_opt!("macd_signal", macd_s);
+    push_opt!("macd_hist",   macd_h);
+    push_opt!("cci_20",      cci(&h, &l, &p, 20));
+    push_opt!("williams_r_14", williams_r(&h, &l, &p, 14));
+    push_opt!("roc_10",   roc(&p, 10));
+    push_opt!("roc_20",   roc(&p, 20));
+    push_opt!("momentum_10", momentum(&p, 10));
+    push_opt!("momentum_20", momentum(&p, 20));
+    push_opt!("cmo_14",   cmo(&p, 14));
+    push_opt!("dpo_20",   dpo(&p, 20));
+    push_opt!("awesome_osc", awesome_osc(&h, &l));
+
+    // ── Volatility ───────────────────────────────────────────────────────────
+    push_opt!("bb_width_20",   bb_width(&p, 20, 2.0));
+    push_opt!("bb_pct_b_20",   bb_pct_b(&p, 20, 2.0));
+    push_opt!("keltner_width_20", keltner_width(&h, &l, &p, 20, 1.5));
+    push_opt!("donchian_width_20", donchian_width(&h, &l, 20));
+    push_opt!("atr_14",    atr(&h, &l, &p, 14));
+    push_opt!("natr_14",   natr(&h, &l, &p, 14));
+    push_opt!("realized_vol_20", realized_vol(&p, 20));
+    push_opt!("parkinson_vol_14", parkinson_vol(&h, &l, 14));
+    push_opt!("garman_klass_20", garman_klass_vol(&h, &l, &opens, &p, 20));
+    push_opt!("squeeze_signal", squeeze_signal(&h, &l, &p, 20));
+
+    // ── Volume ───────────────────────────────────────────────────────────────
+    push_raw!("obv",     obv(&p, &v));
+    push_opt!("vwap_dev", vwap_deviation(&h, &l, &p, &v));
+    push_opt!("mfi_14",   mfi(&h, &l, &p, &v, 14));
+    push_opt!("force_index_13", force_index(&p, &v, 13));
+    push_opt!("ease_of_movement_14", ease_of_movement(&h, &l, &v, 14));
+    push_raw!("vpt",  vpt(&p, &v));
+    push_opt!("vroc_14", vroc(&v, 14));
+    push_opt!("rvol_20", rvol(&v, 20));
+
+    // ── Support / Resistance ─────────────────────────────────────────────────
+    push_opt!("dist_high_20", dist_high(&h, &p, 20));
+    push_opt!("dist_high_50", dist_high(&h, &p, 50));
+    push_opt!("dist_low_20",  dist_low(&l, &p, 20));
+    push_opt!("dist_low_50",  dist_low(&l, &p, 50));
+    push_opt!("pivot_dist",   pivot_dist(&h, &l, &p));
+    push_opt!("r1_dist",      r1_dist(&h, &l, &p));
+    push_opt!("s1_dist",      s1_dist(&h, &l, &p));
+    push_opt!("fib_618_dist", fib_618_dist(&h, &l, &p, 50));
+    push_opt!("round_number_prox", round_number_prox(&p));
+
+    // ── Statistical ──────────────────────────────────────────────────────────
+    push_opt!("zscore_10",   zscore(&p, 10));
+    push_opt!("zscore_20",   zscore(&p, 20));
+    push_opt!("zscore_50",   zscore(&p, 50));
+    push_opt!("lr_slope_20", lr_slope(&p, 20));
+    push_opt!("lr_r2_20",    lr_r2(&p, 20));
+    push_opt!("lr_deviation_20", lr_deviation(&p, 20));
+    push_opt!("autocorr_lag1", autocorr(&p, 1, 50));
+    push_opt!("autocorr_lag5", autocorr(&p, 5, 50));
+    push_opt!("variance_ratio_16", variance_ratio(&p, 16, 100));
+    push_opt!("hurst_100",  hurst(&p, 100));
+
+    // ── Microstructure ───────────────────────────────────────────────────────
+    push_opt!("amihud_20",      amihud_illiquidity(&p, &v, 20));
+    push_opt!("roll_spread",    roll_spread_est(&p, 20));
+    push_opt!("kyle_lambda_20", kyle_lambda(&p, ofi, 20));
+    push_opt!("effective_spread", effective_spread(&sp, &p));
+    push_opt!("book_pressure",  book_pressure_ind(ofi, 20));
+    push_opt!("spread_osc",     spread_osc(&sp, 20));
+    push_opt!("spread_change_rate", spread_change_rate(&sp));
+    push_opt!("info_efficiency_20", info_efficiency_ratio(&p, 20));
+}

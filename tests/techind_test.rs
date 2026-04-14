@@ -370,3 +370,55 @@ mod microstructure_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod compute_all_tests {
+    use orderflow_rs::analysis::techind::{TechData, compute_all};
+
+    #[test]
+    fn compute_all_produces_indicators() {
+        let n = 250;
+        let prices: Vec<f64> = (0..n).map(|i| 1.0 + i as f64 * 0.001 + (i as f64 * 0.1).sin() * 0.01).collect();
+        let highs: Vec<f64> = prices.iter().map(|p| p + 0.001).collect();
+        let lows: Vec<f64> = prices.iter().map(|p| p - 0.001).collect();
+        let volumes: Vec<f64> = vec![1000.0; n];
+        let spreads: Vec<f64> = vec![0.0001; n];
+        let ofi: Vec<f64> = vec![0.1; n];
+        let r_1s: Vec<Option<f64>> = vec![Some(0.001); n];
+        let mut td = TechData::new(
+            (0..n as i64).collect(), prices.clone(), highs, lows,
+            volumes, spreads, r_1s.clone(), r_1s.clone(), r_1s.clone(), r_1s.clone(),
+        );
+        compute_all(&mut td, &ofi);
+        assert!(!td.indicators.is_empty(), "should have indicators");
+        // Check for key indicator names
+        let names: Vec<&str> = td.indicators.iter().map(|s| s.name).collect();
+        assert!(names.contains(&"sma_20"), "missing sma_20");
+        assert!(names.contains(&"rsi_14"), "missing rsi_14");
+        assert!(names.contains(&"bb_width_20"), "missing bb_width_20");
+        assert!(names.contains(&"obv"), "missing obv");
+        assert!(names.contains(&"amihud_20"), "missing amihud_20");
+        // All indicator vecs have same length as prices
+        for ind in &td.indicators {
+            assert_eq!(ind.values.len(), n, "length mismatch for {}", ind.name);
+        }
+    }
+
+    #[test]
+    fn compute_all_no_panic_short_data() {
+        let n = 10; // shorter than most periods
+        let prices = vec![1.0; n];
+        let highs = vec![1.001; n];
+        let lows = vec![0.999; n];
+        let volumes = vec![100.0; n];
+        let spreads = vec![0.0001; n];
+        let ofi = vec![0.0; n];
+        let r = vec![Some(0.0); n];
+        let mut td = TechData::new(
+            (0..n as i64).collect(), prices, highs, lows, volumes, spreads,
+            r.clone(), r.clone(), r.clone(), r.clone(),
+        );
+        compute_all(&mut td, &ofi); // should not panic
+        assert!(!td.indicators.is_empty());
+    }
+}
