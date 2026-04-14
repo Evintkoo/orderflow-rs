@@ -293,3 +293,45 @@ mod volume_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod sr_stats_tests {
+    use orderflow_rs::analysis::techind::{dist_high, dist_low, pivot_dist, zscore, lr_slope, autocorr, hurst, variance_ratio};
+
+    #[test]
+    fn dist_high_non_negative() {
+        let h = vec![1.01, 1.02, 1.03, 1.04, 1.05, 1.03];
+        let c = vec![1.00, 1.01, 1.02, 1.03, 1.04, 1.02];
+        let result = dist_high(&h, &c, 5);
+        for v in result.iter().filter_map(|x| *x) {
+            assert!(v >= 0.0, "dist_high should be non-negative: {v}");
+        }
+    }
+
+    #[test]
+    fn zscore_constant_is_zero() {
+        let p = vec![1.0_f64; 30];
+        let result = zscore(&p, 20);
+        for v in result.iter().skip(19).filter_map(|x| *x) {
+            assert!(v.abs() < 1e-6, "z-score of constant = 0: {v}");
+        }
+    }
+
+    #[test]
+    fn lr_slope_positive_for_rising() {
+        let p: Vec<f64> = (0..30).map(|i| 1.0 + i as f64 * 0.01).collect();
+        let result = lr_slope(&p, 20);
+        let last = result[29].unwrap();
+        assert!(last > 0.0, "LR slope should be positive for rising prices: {last}");
+    }
+
+    #[test]
+    fn hurst_positive() {
+        let n = 200;
+        let p: Vec<f64> = (0..n).map(|i| 1.0 + (i as f64 * 0.05).sin() * 0.01 + i as f64 * 0.0001).collect();
+        let result = hurst(&p, 100);
+        for v in result.iter().filter_map(|x| *x) {
+            assert!(v > 0.0 && v < 2.0, "Hurst should be in (0,2): {v}");
+        }
+    }
+}

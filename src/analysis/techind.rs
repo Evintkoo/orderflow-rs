@@ -805,3 +805,246 @@ pub fn rvol(volumes: &[f64], period: usize) -> Vec<Option<f64>> {
         _ => None,
     }).collect()
 }
+
+// ─── Support / Resistance ─────────────────────────────────────────────────────
+
+/// Distance from close to rolling highest high (fraction of close).
+pub fn dist_high(highs: &[f64], closes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    for i in (period-1)..n {
+        let hh = highs[(i+1-period)..=i].iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        if closes[i] > 1e-12 {
+            out[i] = Some((hh - closes[i]) / closes[i]);
+        }
+    }
+    out
+}
+
+/// Distance from close to rolling lowest low (fraction of close).
+pub fn dist_low(lows: &[f64], closes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = lows.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    for i in (period-1)..n {
+        let ll = lows[(i+1-period)..=i].iter().cloned().fold(f64::INFINITY, f64::min);
+        if closes[i] > 1e-12 {
+            out[i] = Some((closes[i] - ll) / closes[i]);
+        }
+    }
+    out
+}
+
+/// Classic pivot distance: (close - pivot) / close, where pivot = (H_prev + L_prev + C_prev)/3.
+pub fn pivot_dist(highs: &[f64], lows: &[f64], closes: &[f64]) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let mut out = vec![None; n];
+    for i in 1..n {
+        let pivot = (highs[i-1] + lows[i-1] + closes[i-1]) / 3.0;
+        if closes[i] > 1e-12 {
+            out[i] = Some((closes[i] - pivot) / closes[i]);
+        }
+    }
+    out
+}
+
+/// R1 distance: (close - R1) / close, R1 = 2*pivot - L_prev.
+pub fn r1_dist(highs: &[f64], lows: &[f64], closes: &[f64]) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let mut out = vec![None; n];
+    for i in 1..n {
+        let pivot = (highs[i-1] + lows[i-1] + closes[i-1]) / 3.0;
+        let r1 = 2.0 * pivot - lows[i-1];
+        if closes[i] > 1e-12 {
+            out[i] = Some((closes[i] - r1) / closes[i]);
+        }
+    }
+    out
+}
+
+/// S1 distance: (close - S1) / close, S1 = 2*pivot - H_prev.
+pub fn s1_dist(highs: &[f64], lows: &[f64], closes: &[f64]) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let mut out = vec![None; n];
+    for i in 1..n {
+        let pivot = (highs[i-1] + lows[i-1] + closes[i-1]) / 3.0;
+        let s1 = 2.0 * pivot - highs[i-1];
+        if closes[i] > 1e-12 {
+            out[i] = Some((closes[i] - s1) / closes[i]);
+        }
+    }
+    out
+}
+
+/// Fibonacci 61.8% level distance: (close - fib) / close.
+pub fn fib_618_dist(highs: &[f64], lows: &[f64], closes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    for i in (period-1)..n {
+        let hh = highs[(i+1-period)..=i].iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let ll = lows[(i+1-period)..=i].iter().cloned().fold(f64::INFINITY, f64::min);
+        let fib = ll + 0.618 * (hh - ll);
+        if closes[i] > 1e-12 {
+            out[i] = Some((closes[i] - fib) / closes[i]);
+        }
+    }
+    out
+}
+
+/// Round number proximity: distance to nearest 0.001 multiple (fraction of price).
+pub fn round_number_prox(closes: &[f64]) -> Vec<Option<f64>> {
+    closes.iter().map(|c| {
+        if *c > 1e-12 {
+            let nearest = (c / 0.001).round() * 0.001;
+            Some((c - nearest).abs() / c)
+        } else { None }
+    }).collect()
+}
+
+// ─── Statistical ──────────────────────────────────────────────────────────────
+
+/// Z-score: (price - SMA) / std_dev over `period` bars.
+pub fn zscore(prices: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    for i in (period-1)..n {
+        let w = &prices[(i+1-period)..=i];
+        let mean = w.iter().sum::<f64>() / period as f64;
+        let sd = std_dev(w);
+        if sd > 1e-12 {
+            out[i] = Some((prices[i] - mean) / sd);
+        }
+    }
+    out
+}
+
+/// Linear regression slope over `period` bars (normalized by mean).
+pub fn lr_slope(prices: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    let x_mean = (period as f64 - 1.0) / 2.0;
+    let ss_x: f64 = (0..period).map(|j| (j as f64 - x_mean).powi(2)).sum();
+    for i in (period-1)..n {
+        let w = &prices[(i+1-period)..=i];
+        let y_mean = w.iter().sum::<f64>() / period as f64;
+        let sp: f64 = (0..period).map(|j| (j as f64 - x_mean) * (w[j] - y_mean)).sum();
+        if ss_x > 1e-12 && y_mean.abs() > 1e-12 {
+            out[i] = Some(sp / ss_x / y_mean);
+        }
+    }
+    out
+}
+
+/// LR R² over `period` bars.
+pub fn lr_r2(prices: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    let x_mean = (period as f64 - 1.0) / 2.0;
+    let ss_x: f64 = (0..period).map(|j| (j as f64 - x_mean).powi(2)).sum();
+    for i in (period-1)..n {
+        let w = &prices[(i+1-period)..=i];
+        let y_mean = w.iter().sum::<f64>() / period as f64;
+        let sp: f64 = (0..period).map(|j| (j as f64 - x_mean) * (w[j] - y_mean)).sum();
+        let ss_y: f64 = w.iter().map(|y| (y - y_mean).powi(2)).sum();
+        if ss_x > 1e-12 && ss_y > 1e-12 {
+            out[i] = Some(sp.powi(2) / (ss_x * ss_y));
+        }
+    }
+    out
+}
+
+/// LR deviation: (close - fitted value) / mean.
+pub fn lr_deviation(prices: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    let x_mean = (period as f64 - 1.0) / 2.0;
+    let ss_x: f64 = (0..period).map(|j| (j as f64 - x_mean).powi(2)).sum();
+    for i in (period-1)..n {
+        let w = &prices[(i+1-period)..=i];
+        let y_mean = w.iter().sum::<f64>() / period as f64;
+        let sp: f64 = (0..period).map(|j| (j as f64 - x_mean) * (w[j] - y_mean)).sum();
+        if ss_x > 1e-12 && y_mean.abs() > 1e-12 {
+            let slope = sp / ss_x;
+            let intercept = y_mean - slope * x_mean;
+            let predicted = slope * (period as f64 - 1.0) + intercept;
+            out[i] = Some((prices[i] - predicted) / y_mean);
+        }
+    }
+    out
+}
+
+/// Autocorrelation at `lag` over a rolling `window`.
+pub fn autocorr(prices: &[f64], lag: usize, window: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if lag + window > n || window == 0 { return out; }
+    for i in (lag + window - 1)..n {
+        let y = &prices[(i + 1 - window)..=i];
+        let x_start = i + 1 - window - lag;
+        let x = &prices[x_start..(x_start + window)];
+        let n_f = window as f64;
+        let mx = x.iter().sum::<f64>() / n_f;
+        let my = y.iter().sum::<f64>() / n_f;
+        let cov: f64 = x.iter().zip(y.iter()).map(|(xi, yi)| (xi - mx) * (yi - my)).sum::<f64>() / n_f;
+        let sx = std_dev(x);
+        let sy = std_dev(y);
+        if sx > 1e-12 && sy > 1e-12 {
+            out[i] = Some(cov / (sx * sy));
+        }
+    }
+    out
+}
+
+/// Variance ratio (Lo-MacKinlay): Var(q-return) / (q * Var(1-return)).
+pub fn variance_ratio(prices: &[f64], q: usize, window: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if window == 0 || q == 0 || window + q > n { return out; }
+    let log_ret: Vec<f64> = (1..n)
+        .map(|i| if prices[i-1] > 1e-12 { (prices[i] / prices[i-1]).ln() } else { 0.0 })
+        .collect();
+    for i in (window + q - 1)..n {
+        let r1 = &log_ret[(i - window)..i];
+        let var1 = std_dev(r1).powi(2);
+        let rq: Vec<f64> = (0..(window - q + 1))
+            .map(|j| r1[j..(j + q)].iter().sum::<f64>())
+            .collect();
+        let varq = std_dev(&rq).powi(2);
+        if var1 > 1e-12 {
+            out[i] = Some(varq / (q as f64 * var1));
+        }
+    }
+    out
+}
+
+/// Hurst exponent (R/S method) over `window` bars.
+pub fn hurst(prices: &[f64], window: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if window < 20 || window > n { return out; }
+    for i in (window-1)..n {
+        let w = &prices[(i+1-window)..=i];
+        let mean = w.iter().sum::<f64>() / window as f64;
+        let deviations: Vec<f64> = w.iter().map(|x| x - mean).collect();
+        let mut cum = 0.0_f64;
+        let mut max_cum = f64::NEG_INFINITY;
+        let mut min_cum = f64::INFINITY;
+        for d in &deviations {
+            cum += d;
+            max_cum = max_cum.max(cum);
+            min_cum = min_cum.min(cum);
+        }
+        let rs = max_cum - min_cum;
+        let sd = std_dev(w);
+        if sd > 1e-12 && rs > 0.0 {
+            out[i] = Some((rs / sd).ln() / (window as f64).ln());
+        }
+    }
+    out
+}
