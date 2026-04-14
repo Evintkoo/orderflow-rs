@@ -22,8 +22,6 @@
 use anyhow::Result;
 use std::env;
 
-mod commands;
-
 fn main() -> Result<()> {
     let args: Vec<String> = env::args().collect();
     let cmd = args.get(1).map(|s| s.as_str()).unwrap_or("demo");
@@ -221,7 +219,7 @@ fn main() -> Result<()> {
             // Usage: techanalysis [data_dir] [reports_dir]
             let data_dir    = args.get(2).map(|s| s.as_str()).unwrap_or("data");
             let reports_dir = args.get(3).map(|s| s.as_str()).unwrap_or("reports/techanalysis");
-            commands::techanalysis::run(data_dir, reports_dir)?;
+            orderflow_rs::commands::techanalysis::run(data_dir, reports_dir)?;
         }
         "demo" => demo_orderbook()?,
         _ => print_help(),

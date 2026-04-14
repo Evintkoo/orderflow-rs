@@ -479,3 +479,36 @@ mod compute_all_tests {
         assert!(!td.indicators.is_empty());
     }
 }
+
+#[cfg(test)]
+mod cli_e2e_tests {
+    use std::io::Write as IoWrite;
+
+    #[test]
+    fn cli_techanalysis_end_to_end() {
+        let data_dir = tempfile::tempdir().unwrap();
+        let reports_dir = tempfile::tempdir().unwrap();
+
+        // Write a minimal CSV with 250 rows using the CORRECT column format
+        // Actual CSV columns: ts,ofi_1,ofi_5,ofi_10,depth_imb,microprice_dev,queue_imb,
+        //   spread,trade_intensity,price_impact,level_drain,weighted_mid_slope,
+        //   r_1s,r_5s,r_30s,r_300s,sign_1s,sign_5s,exchange,symbol,is_imputed,gap_flag
+        let csv_path = data_dir.path().join("EURUSD_features.csv");
+        let mut f = std::fs::File::create(&csv_path).unwrap();
+        writeln!(f, "ts,ofi_1,ofi_5,ofi_10,depth_imb,microprice_dev,queue_imb,spread,trade_intensity,price_impact,level_drain,weighted_mid_slope,r_1s,r_5s,r_30s,r_300s,sign_1s,sign_5s,exchange,symbol,is_imputed,gap_flag").unwrap();
+        for i in 0..250usize {
+            let r = 0.0001 * ((i as f64 * 0.3).sin());
+            writeln!(f, "{},0.1,0.05,0.02,0.01,0.001,0.02,0.0001,5.0,0.001,0.5,0.0002,{r},{r},{r},{r},1,1,DUKA,EURUSD,0,0", i * 1000).unwrap();
+        }
+
+        orderflow_rs::commands::techanalysis::run(
+            data_dir.path().to_str().unwrap(),
+            reports_dir.path().to_str().unwrap(),
+        ).unwrap();
+
+        let csv = reports_dir.path().join("EURUSD_techanalysis.csv");
+        assert!(csv.exists(), "per-pair report should exist at {:?}", csv);
+        let summary = reports_dir.path().join("summary_techanalysis.csv");
+        assert!(summary.exists(), "summary report should exist");
+    }
+}
