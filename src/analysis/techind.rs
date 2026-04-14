@@ -541,3 +541,150 @@ pub fn awesome_osc(highs: &[f64], lows: &[f64]) -> Vec<Option<f64>> {
         _ => None,
     }).collect()
 }
+
+// ─── Volatility ───────────────────────────────────────────────────────────────
+
+/// Population std dev of a slice.
+fn std_dev(data: &[f64]) -> f64 {
+    if data.is_empty() { return 0.0; }
+    let n = data.len() as f64;
+    let mean = data.iter().sum::<f64>() / n;
+    (data.iter().map(|x| (x - mean).powi(2)).sum::<f64>() / n).sqrt()
+}
+
+/// Bollinger Band width: (upper - lower) / middle = 2 * k * std / mean.
+pub fn bb_width(prices: &[f64], period: usize, num_std: f64) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    for i in (period-1)..n {
+        let w = &prices[(i+1-period)..=i];
+        let mean = w.iter().sum::<f64>() / period as f64;
+        let sd = std_dev(w);
+        if mean > 1e-12 {
+            out[i] = Some(2.0 * num_std * sd / mean);
+        }
+    }
+    out
+}
+
+/// Bollinger Band %b: (price - lower) / (upper - lower).
+pub fn bb_pct_b(prices: &[f64], period: usize, num_std: f64) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    for i in (period-1)..n {
+        let w = &prices[(i+1-period)..=i];
+        let mean = w.iter().sum::<f64>() / period as f64;
+        let sd = std_dev(w);
+        let upper = mean + num_std * sd;
+        let lower = mean - num_std * sd;
+        let range = upper - lower;
+        if range > 1e-12 {
+            out[i] = Some((prices[i] - lower) / range);
+        }
+    }
+    out
+}
+
+/// Keltner Channel width: 2 * mult * ATR / EMA.
+pub fn keltner_width(highs: &[f64], lows: &[f64], closes: &[f64], period: usize, mult: f64)
+    -> Vec<Option<f64>>
+{
+    let ema_v = ema(closes, period);
+    let atr_v = atr(highs, lows, closes, period);
+    let n = highs.len();
+    (0..n).map(|i| match (ema_v[i], atr_v[i]) {
+        (Some(e), Some(a)) if e > 1e-12 => Some(2.0 * mult * a / e),
+        _ => None,
+    }).collect()
+}
+
+/// Donchian Channel width: (highest_high - lowest_low) / midpoint.
+pub fn donchian_width(highs: &[f64], lows: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    for i in (period-1)..n {
+        let hh = highs[(i+1-period)..=i].iter().cloned().fold(f64::NEG_INFINITY, f64::max);
+        let ll = lows[(i+1-period)..=i].iter().cloned().fold(f64::INFINITY, f64::min);
+        let mid = (hh + ll) / 2.0;
+        if mid > 1e-12 {
+            out[i] = Some((hh - ll) / mid);
+        }
+    }
+    out
+}
+
+/// Normalized ATR: ATR / close * 100.
+pub fn natr(highs: &[f64], lows: &[f64], closes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let atr_v = atr(highs, lows, closes, period);
+    atr_v.iter().zip(closes.iter()).map(|(a, c)| {
+        match a {
+            Some(av) if *c > 1e-12 => Some(av / c * 100.0),
+            _ => None,
+        }
+    }).collect()
+}
+
+/// Realized volatility (std dev of log returns over `period` bars).
+pub fn realized_vol(prices: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = prices.len();
+    let mut out = vec![None; n];
+    if period >= n { return out; }
+    let log_ret: Vec<f64> = (1..n).map(|i|
+        if prices[i-1] > 1e-12 { (prices[i] / prices[i-1]).ln() } else { 0.0 }
+    ).collect();
+    for i in period..n {
+        let w = &log_ret[(i-period)..(i)];
+        out[i] = Some(std_dev(w));
+    }
+    out
+}
+
+/// Parkinson volatility: sqrt(1/(4*ln2) * mean((ln(H/L))^2)).
+pub fn parkinson_vol(highs: &[f64], lows: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    let factor = 1.0 / (4.0 * 2.0_f64.ln());
+    for i in (period-1)..n {
+        let sum: f64 = (0..period).map(|j| {
+            let idx = i + 1 - period + j;
+            let ratio = highs[idx] / lows[idx].max(1e-12);
+            ratio.ln().powi(2)
+        }).sum();
+        out[i] = Some((factor * sum / period as f64).sqrt());
+    }
+    out
+}
+
+/// Garman-Klass volatility estimator.
+pub fn garman_klass_vol(highs: &[f64], lows: &[f64], opens: &[f64], closes: &[f64], period: usize)
+    -> Vec<Option<f64>>
+{
+    let n = highs.len();
+    let mut out = vec![None; n];
+    if period == 0 || period > n { return out; }
+    for i in (period-1)..n {
+        let sum: f64 = (0..period).map(|j| {
+            let k = i + 1 - period + j;
+            let hl = (highs[k] / lows[k].max(1e-12)).ln().powi(2) * 0.5;
+            let co = (closes[k] / opens[k].max(1e-12)).ln().powi(2) * (2.0 * 2.0_f64.ln() - 1.0);
+            hl - co
+        }).sum::<f64>();
+        out[i] = Some((sum / period as f64).max(0.0).sqrt());
+    }
+    out
+}
+
+/// Squeeze signal: Some(1.0) if BB width < Keltner width (squeeze on), else Some(0.0).
+pub fn squeeze_signal(highs: &[f64], lows: &[f64], closes: &[f64], period: usize) -> Vec<Option<f64>> {
+    let n = highs.len();
+    let bb = bb_width(closes, period, 2.0);
+    let kc = keltner_width(highs, lows, closes, period, 1.5);
+    (0..n).map(|i| match (bb[i], kc[i]) {
+        (Some(b), Some(k)) => Some(if b < k { 1.0 } else { 0.0 }),
+        _ => None,
+    }).collect()
+}

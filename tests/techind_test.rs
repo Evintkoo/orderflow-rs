@@ -208,3 +208,48 @@ mod momentum_tests {
         }
     }
 }
+
+#[cfg(test)]
+mod volatility_tests {
+    use orderflow_rs::analysis::techind::{bb_width, bb_pct_b, keltner_width, donchian_width, natr, realized_vol, parkinson_vol, squeeze_signal};
+
+    #[test]
+    fn bb_width_positive() {
+        let n = 30;
+        let p: Vec<f64> = (0..n).map(|i| 1.0 + (i as f64 * 0.3).sin() * 0.05).collect();
+        let w = bb_width(&p, 20, 2.0);
+        assert_eq!(w.len(), n);
+        let last = w[29].unwrap();
+        assert!(last > 0.0, "BB width should be positive: {last}");
+    }
+
+    #[test]
+    fn bb_pct_b_finite() {
+        let n = 30;
+        let p: Vec<f64> = (0..n).map(|i| 1.0 + i as f64 * 0.001).collect();
+        let pct = bb_pct_b(&p, 20, 2.0);
+        for v in pct.iter().filter_map(|x| *x) {
+            assert!(v.is_finite(), "%b should be finite: {v}");
+        }
+    }
+
+    #[test]
+    fn realized_vol_positive() {
+        let n = 30;
+        let p: Vec<f64> = (0..n).map(|i| 1.0 + i as f64 * 0.001 + (i as f64 * 0.7).sin() * 0.002).collect();
+        let rv = realized_vol(&p, 20);
+        let last = rv[29].unwrap();
+        assert!(last > 0.0, "realized vol should be positive");
+    }
+
+    #[test]
+    fn parkinson_vol_positive() {
+        let n = 20;
+        let h: Vec<f64> = (0..n).map(|i| 1.0 + i as f64 * 0.001 + 0.005).collect();
+        let l: Vec<f64> = (0..n).map(|i| 1.0 + i as f64 * 0.001).collect();
+        let pv = parkinson_vol(&h, &l, 14);
+        for v in pv.iter().filter_map(|x| *x) {
+            assert!(v >= 0.0, "Parkinson vol should be non-negative");
+        }
+    }
+}
