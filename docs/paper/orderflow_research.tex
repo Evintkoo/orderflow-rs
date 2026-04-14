@@ -9,6 +9,7 @@
 \usepackage[utf8]{inputenc}
 \usepackage{lmodern}
 \usepackage{microtype}           % character protrusion & font expansion
+\usepackage{calligra}            % cursive signature font
 
 % ── Page layout ──────────────────────────────────────────────────────────────
 \usepackage[top=2.8cm,bottom=2.8cm,left=3cm,right=3cm,headheight=14pt]{geometry}
@@ -227,22 +228,38 @@ Foreign Exchange, and Synthetic Market Microstructure}
 \thispagestyle{empty}
 \vspace*{2cm}
 
-{\large\bfseries\color{darkblue} Declaration of Originality}
+{\large\bfseries\color{darkblue} Declaratio Originalitatis}
 
-\vspace{0.8cm}
+\vspace{0.15cm}
+{\small\itshape\color{gray1} Declaration of Originality}
 
-I hereby declare that this work is my own original research and has not
-been submitted elsewhere for publication in the same form.
-All sources consulted are acknowledged in the references. The
-\code{orderflow-rs} codebase, data collection pipeline, and all
-empirical analyses reported herein were designed and implemented by
-the author.
+\vspace{1.0cm}
 
-\vspace{1.5cm}
+\noindent\textit{Ego, Evint Leovonzko, declaro atque testor hoc opus ---
+analysin empiricam ordinum limitatorum in mercatis frequentiae altae
+a capite usque ad calcem --- propria industria et ingenio composuisse.
+Fontes omnes adhibiti in indice bibliographico enumerantur. Programmatum
+fons (\code{orderflow-rs}), ratio colligendi data, omnesque analyses
+empiricae a me ipso elaboratae sunt. Opus hoc alibi ad publicandum
+nondum submissum est.}
+
+\vspace{0.7cm}
+\noindent\small\color{gray1}%
+I, Evint Leovonzko, declare and attest that this work --- an empirical
+analysis of high-frequency limit order book dynamics --- was composed
+in its entirety by my own effort and intellect. All sources consulted
+are listed in the bibliography. The \code{orderflow-rs} codebase, data
+collection pipeline, and all empirical analyses were designed and
+implemented by the author. This work has not been submitted elsewhere
+for publication.
+
+\vspace{2.2cm}
+\normalcolor
 \noindent
-\begin{tabular}{ll}
-Signature: & \underline{\hspace{6cm}} \\[0.8cm]
-Date:       & \underline{\hspace{6cm}} \\
+\begin{tabular}{@{}p{3.2cm} p{7cm}@{}}
+\textit{Subscripsit:} &
+  {\calligra\Large Evint Leovonzko} \\[0.5cm]
+\textit{Die:}         & 15 April 2025 \\
 \end{tabular}
 
 \vfill
