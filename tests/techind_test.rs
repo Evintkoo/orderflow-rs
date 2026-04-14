@@ -52,3 +52,53 @@ mod tests {
         assert_eq!(s.name, "sma_10");
     }
 }
+
+#[cfg(test)]
+mod moving_average_tests {
+    use orderflow_rs::analysis::techind::{sma, ema, wma, dema, tema, hma, kama, golden_cross, death_cross};
+
+    #[test]
+    fn sma_basic() {
+        let p = vec![1.0, 2.0, 3.0, 4.0, 5.0];
+        let result = sma(&p, 3);
+        assert_eq!(result.len(), 5);
+        assert_eq!(result[0], None);
+        assert_eq!(result[1], None);
+        assert!((result[2].unwrap() - 2.0).abs() < 1e-9);
+        assert!((result[4].unwrap() - 4.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn ema_converges() {
+        let p: Vec<f64> = (0..50).map(|i| 10.0 + i as f64 * 0.1).collect();
+        let result = ema(&p, 12);
+        let last = result[49].unwrap();
+        let first_valid = result[11].unwrap();
+        assert!(last > first_valid, "EMA should track rising prices");
+    }
+
+    #[test]
+    fn golden_cross_signal() {
+        let mut p: Vec<f64> = vec![10.0; 30];
+        for i in 20..30 { p[i] = 10.0 + (i - 20) as f64 * 0.5; }
+        let gc = golden_cross(&p, 5, 20);
+        assert_eq!(gc.len(), 30);
+        // At least some non-None values after warmup
+        assert!(gc.iter().skip(20).any(|v| v.is_some()));
+    }
+
+    #[test]
+    fn wma_weighted_correctly() {
+        // WMA(3) on [1,2,3] = (1*1 + 2*2 + 3*3)/(1+2+3) = 14/6 ≈ 2.333
+        let p = vec![1.0, 2.0, 3.0];
+        let result = wma(&p, 3);
+        assert!((result[2].unwrap() - 14.0/6.0).abs() < 1e-9);
+    }
+
+    #[test]
+    fn hma_length_matches() {
+        let p: Vec<f64> = (0..50).map(|i| i as f64).collect();
+        let result = hma(&p, 14);
+        assert_eq!(result.len(), 50);
+    }
+}
