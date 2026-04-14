@@ -1251,7 +1251,7 @@ the four return horizons on a log-linear scale.
 \centering
 \begin{tikzpicture}
 \begin{axis}[
-  width=0.82\textwidth, height=6cm,
+  width=0.65\textwidth, height=6cm,
   xlabel={Return horizon $\tau$ (seconds, log scale)},
   ylabel={Average Spearman IC},
   xmode=log, log basis x=10,
@@ -1259,8 +1259,9 @@ the four return horizons on a log-linear scale.
   xticklabels={1\,s,5\,s,30\,s,300\,s},
   ymin=0, ymax=0.46,
   ytick={0,0.1,0.2,0.3,0.4},
-  legend pos=north east,
-  legend style={font=\small,fill=white,fill opacity=0.9,draw=gray!40},
+  legend pos=outer north east,
+  legend style={font=\small,fill=white,draw=gray!40,
+                cells={anchor=west}},
   title={\small IC Decay Across Return Horizons (top-5 indicators, all assets)},
   title style={font=\small\bfseries},
 ]
