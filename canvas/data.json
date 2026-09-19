@@ -1,3 +1,50 @@
 {
-  "status": "done"
+  "status": "done",
+  "nodes": {
+    "live-websocket-connectors": {
+      "status": "done"
+    },
+    "rest-polling-sources": {
+      "status": "done"
+    },
+    "historical-replay-adapters": {
+      "status": "done"
+    },
+    "data-quality-reconnect-handling": {
+      "status": "done"
+    },
+    "order-book-reconstruction-engine": {
+      "status": "done"
+    },
+    "multi-level-ofi-features": {
+      "status": "done"
+    },
+    "trade-pressure-impact-metrics": {
+      "status": "done"
+    },
+    "lookahead-safe-return-labeling": {
+      "status": "done"
+    },
+    "synthetic-lob-simulator": {
+      "status": "done"
+    },
+    "87-indicator-technical-engine": {
+      "status": "done"
+    },
+    "spearman-ic-reporting": {
+      "status": "done"
+    },
+    "walk-forward-backtest-engine": {
+      "status": "done"
+    },
+    "four-phase-research-narrative": {
+      "status": "done"
+    },
+    "full-latex-thesis": {
+      "status": "done"
+    },
+    "cross-asset-ic-study-report": {
+      "status": "done"
+    }
+  }
 }
