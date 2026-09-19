@@ -2,81 +2,135 @@
   "status": "done",
   "title": "orderflow-rs",
   "description": "A Rust pipeline for LOB microstructure research: multi-exchange ingestion, order-flow features, and a full simulation/backtest/reporting research engine.",
-  "nodes": {
-    "live-websocket-connectors": {
-      "status": "done",
-      "title": "Live WebSocket Connectors",
-      "description": "Seven direct exchange WebSocket ingesters (Binance, Coinbase, Kraken, Gemini, OKX, Bybit, Bitstamp) stream L2/L3 book deltas and trades into a common event type."
+  "branches": [
+    {
+      "label": "Multi-Exchange Data Ingestion",
+      "nodes": [
+        {
+          "id": "live-websocket-connectors",
+          "title": "Live WebSocket Connectors",
+          "status": "done",
+          "description": "Seven direct exchange WebSocket ingesters (Binance, Coinbase, Kraken, Gemini, OKX, Bybit, Bitstamp) stream L2/L3 book deltas and trades into a common event type.",
+          "path": "src/pipeline"
+        },
+        {
+          "id": "rest-polling-sources",
+          "title": "REST & Polling Sources",
+          "status": "done",
+          "description": "Poll-based ingesters for Alpaca, Polygon, Tiingo, Finnhub, Yahoo Finance, and Binance's REST API pull quotes and bars for venues without a book WebSocket.",
+          "path": "src/pipeline"
+        },
+        {
+          "id": "historical-replay-adapters",
+          "title": "Historical Replay Adapters",
+          "status": "done",
+          "description": "File-replay parsers reconstruct order books from LOBSTER (NASDAQ ITCH), IEX TOPS/DEEP, and Dukascopy FX tick data, so the same pipeline runs on archived data.",
+          "path": "src/pipeline"
+        },
+        {
+          "id": "data-quality-reconnect-handling",
+          "title": "Data-Quality & Reconnect Handling",
+          "status": "done",
+          "description": "Every ingester tags rows with imputed/gap/outlier flags and resets feature state on snapshot resync or disconnect, so reconnections don't silently corrupt statistics.",
+          "path": "src/pipeline"
+        }
+      ],
+      "description": "Fourteen source-specific ingesters normalize live and historical market data into one event stream."
     },
-    "rest-polling-sources": {
-      "status": "done",
-      "title": "REST & Polling Sources",
-      "description": "Poll-based ingesters for Alpaca, Polygon, Tiingo, Finnhub, Yahoo Finance, and Binance's REST API pull quotes and bars for venues without a book WebSocket."
+    {
+      "label": "LOB Reconstruction & Order-Flow Features",
+      "nodes": [
+        {
+          "id": "order-book-reconstruction-engine",
+          "title": "Order Book Reconstruction Engine",
+          "status": "done",
+          "description": "A BTreeMap-backed bid/ask ladder applies deltas and snapshot resets event-by-event, rejecting crossed books, locked down by property-based tests.",
+          "path": "src/orderbook"
+        },
+        {
+          "id": "multi-level-ofi-features",
+          "title": "Multi-Level OFI Features",
+          "status": "done",
+          "description": "Computes order-flow imbalance across ten price levels plus depth imbalance, microprice deviation, queue imbalance, and spread at every tick.",
+          "path": "src/features"
+        },
+        {
+          "id": "trade-pressure-impact-metrics",
+          "title": "Trade-Pressure & Impact Metrics",
+          "status": "done",
+          "description": "Derives trade intensity, price impact, level-drain, and weighted mid-slope from the trade tape to capture liquidity consumption.",
+          "path": "src/features"
+        },
+        {
+          "id": "lookahead-safe-return-labeling",
+          "title": "Lookahead-Safe Return Labeling",
+          "status": "done",
+          "description": "A delay queue attaches realized forward returns and sign labels at 1s/5s/30s/300s horizons only once each horizon has actually elapsed.",
+          "path": "src/features"
+        }
+      ],
+      "description": "Turns raw book/trade events into a labeled, lookahead-safe feature table.",
+      "path": "src/orderbook"
     },
-    "historical-replay-adapters": {
-      "status": "done",
-      "title": "Historical Replay Adapters",
-      "description": "File-replay parsers reconstruct order books from LOBSTER (NASDAQ ITCH), IEX TOPS/DEEP, and Dukascopy FX tick data, so the same pipeline runs on archived data."
+    {
+      "label": "Research Engine",
+      "nodes": [
+        {
+          "id": "synthetic-lob-simulator",
+          "title": "Synthetic LOB Simulator",
+          "status": "done",
+          "description": "An agent-based flow generator drives a synthetic limit order book, used to confirm OFI_1 predicts synthetic price moves under known ground truth (IC 0.15-0.33).",
+          "path": "src/simulator"
+        },
+        {
+          "id": "87-indicator-technical-engine",
+          "title": "87-Indicator Technical Engine",
+          "status": "done",
+          "description": "Implements 87 classical and microstructure indicators (RSI, MACD, ADX, Supertrend, Hurst exponent, and more) across five categories.",
+          "path": "src/analysis"
+        },
+        {
+          "id": "spearman-ic-reporting",
+          "title": "Spearman IC Reporting",
+          "status": "done",
+          "description": "Computes rank information coefficients per indicator per return horizon, the engine behind the cross-asset study across 162 symbol-source combinations.",
+          "path": "docs/reports/P7_technical_indicator_IC_analysis.md"
+        },
+        {
+          "id": "walk-forward-backtest-engine",
+          "title": "Walk-Forward Backtest Engine",
+          "status": "done",
+          "description": "An OLS-fit composite signal feeds a walk-forward, transaction-cost-aware backtest, which found OFI signals unprofitable net of fees and spread.",
+          "path": "src/simulator"
+        }
+      ],
+      "description": "Simulation, indicators, and backtesting that turn features into tested trading hypotheses."
     },
-    "data-quality-reconnect-handling": {
-      "status": "done",
-      "title": "Data-Quality & Reconnect Handling",
-      "description": "Every ingester tags rows with imputed/gap/outlier flags and resets feature state on snapshot resync or disconnect, so reconnections don't silently corrupt statistics."
-    },
-    "order-book-reconstruction-engine": {
-      "status": "done",
-      "title": "Order Book Reconstruction Engine",
-      "description": "A BTreeMap-backed bid/ask ladder applies deltas and snapshot resets event-by-event, rejecting crossed books, locked down by property-based tests."
-    },
-    "multi-level-ofi-features": {
-      "status": "done",
-      "title": "Multi-Level OFI Features",
-      "description": "Computes order-flow imbalance across ten price levels plus depth imbalance, microprice deviation, queue imbalance, and spread at every tick."
-    },
-    "trade-pressure-impact-metrics": {
-      "status": "done",
-      "title": "Trade-Pressure & Impact Metrics",
-      "description": "Derives trade intensity, price impact, level-drain, and weighted mid-slope from the trade tape to capture liquidity consumption."
-    },
-    "lookahead-safe-return-labeling": {
-      "status": "done",
-      "title": "Lookahead-Safe Return Labeling",
-      "description": "A delay queue attaches realized forward returns and sign labels at 1s/5s/30s/300s horizons only once each horizon has actually elapsed."
-    },
-    "synthetic-lob-simulator": {
-      "status": "done",
-      "title": "Synthetic LOB Simulator",
-      "description": "An agent-based flow generator drives a synthetic limit order book, used to confirm OFI_1 predicts synthetic price moves under known ground truth (IC 0.15-0.33)."
-    },
-    "87-indicator-technical-engine": {
-      "status": "done",
-      "title": "87-Indicator Technical Engine",
-      "description": "Implements 87 classical and microstructure indicators (RSI, MACD, ADX, Supertrend, Hurst exponent, and more) across five categories."
-    },
-    "spearman-ic-reporting": {
-      "status": "done",
-      "title": "Spearman IC Reporting",
-      "description": "Computes rank information coefficients per indicator per return horizon, the engine behind the cross-asset study across 162 symbol-source combinations."
-    },
-    "walk-forward-backtest-engine": {
-      "status": "done",
-      "title": "Walk-Forward Backtest Engine",
-      "description": "An OLS-fit composite signal feeds a walk-forward, transaction-cost-aware backtest, which found OFI signals unprofitable net of fees and spread."
-    },
-    "four-phase-research-narrative": {
-      "status": "done",
-      "title": "Four-Phase Research Narrative",
-      "description": "The README documents an explicit P4-P7 progression, each closed out with a stated pass/partial/fail verdict."
-    },
-    "full-latex-thesis": {
-      "status": "done",
-      "title": "Full LaTeX Thesis",
-      "description": "A compiled thesis PDF, \"Predictability of High-Frequency Limit Order Book Dynamics,\" documents the complete methodology and results."
-    },
-    "cross-asset-ic-study-report": {
-      "status": "done",
-      "title": "Cross-Asset IC Study Report",
-      "description": "A standalone report analyzes 87 indicators across 162 symbol-source combinations spanning FX, crypto, and mixed assets across 15 data providers."
+    {
+      "label": "Published Research Outputs",
+      "nodes": [
+        {
+          "id": "four-phase-research-narrative",
+          "title": "Four-Phase Research Narrative",
+          "status": "done",
+          "description": "The README documents an explicit P4-P7 progression, each closed out with a stated pass/partial/fail verdict."
+        },
+        {
+          "id": "full-latex-thesis",
+          "title": "Full LaTeX Thesis",
+          "status": "done",
+          "description": "A compiled thesis PDF, \"Predictability of High-Frequency Limit Order Book Dynamics,\" documents the complete methodology and results.",
+          "path": "docs/paper/orderflow_research.tex"
+        },
+        {
+          "id": "cross-asset-ic-study-report",
+          "title": "Cross-Asset IC Study Report",
+          "status": "done",
+          "description": "A standalone report analyzes 87 indicators across 162 symbol-source combinations spanning FX, crypto, and mixed assets across 15 data providers.",
+          "path": "docs/reports/P7_technical_indicator_IC_analysis.md"
+        }
+      ],
+      "description": "The research is written up and reproducible, not just coded."
     }
-  }
+  ]
 }
